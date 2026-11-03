@@ -1,0 +1,24 @@
+:root {
+  --bg: #0f1115;
+  --surface: #181b22;
+  --border: #262a33;
+  --text: #e6e8eb;
+  --muted: #8a929e;
+  --accent: #4f8cff;
+  --accent-hover: #3a78f0;
+  --error: #ff5d5d;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }

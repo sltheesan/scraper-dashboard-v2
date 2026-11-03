@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth & RBAC ────────────────────────────────────────────
+
+enum UserRole {
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  passwordHash   String
+  role           UserRole  @default(VIEWER)
+  isActive       Boolean   @default(true)
+  lastLoginAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  activityLogs   ActivityLog[]
+
+  @@map("users")
+}
+
+// ─── Scraper ────────────────────────────────────────────────
+
+enum ProfileKind {
+  CGAMING
+  ZOOMWLB
+}
+
+enum ProfileStatus {
+  IDLE
+  LOGGED_IN
+  SCRAPING
+  LOGGED_OUT
+  ERROR
+}
+
+model Profile {
+  id                 String        @id @default(cuid())
+  name               String        @unique
+  kind               ProfileKind
+  loginUrl           String
+  targetUrl          String
+  buttonSelector     String        @default("")
+  status             ProfileStatus @default(IDLE)
+  lastLoginAt        DateTime?
+  lastScrapeAt       DateTime?
+  proxy              String        @default("")
+  notes              String        @default("")
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  credential         ProfileCredential?
+  scrapes            Scrape[]
+
+  @@map("profiles")
+}
+
+model ProfileCredential {
+  id                  String   @id @default(cuid())
+  profileId           String   @unique
+  profile             Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  usernameEncrypted   String
+  passwordEncrypted   String
+  pinEncrypted        String   @default("")
+  otpEmail            String   @default("")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("profile_credentials")
+}
+
+model Scrape {
+  id                     String   @id @default(cuid())
+  profileId              String
+  profile                Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  kind                   ProfileKind
+  reportDate             DateTime @db.Date
+  reportDateString       String
+  newRegistrationCount   Int?
+  newDepositCount        Int?
+  totalDepositCount      Int?
+  totalDepositAmount     Decimal? @db.Decimal(18, 2)
+  totalWithdrawalCount   Int?
+  totalWithdrawalAmount  Decimal? @db.Decimal(18, 2)
+  raw                    Json?
+  scrapedAt              DateTime @default(now())
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@unique([profileId, reportDate])
+  @@index([reportDate])
+  @@map("scrapes")
+}
+
+// ─── Settings ───────────────────────────────────────────────
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}
+
+// ─── Activity & Audit ───────────────────────────────────────
+
+enum ActorType {
+  USER
+  TELEGRAM
+  SYSTEM
+}
+
+model ActivityLog {
+  id         String    @id @default(cuid())
+  actorType  ActorType
+  actorId    String?
+  actor      User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  target     String    @default("")
+  details    String    @default("")
+  meta       Json?
+  createdAt  DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([actorType])
+  @@map("activity_logs")
+}
