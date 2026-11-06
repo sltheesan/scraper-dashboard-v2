@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "timestamp": "2026-11-05T12:21:01.062Z",
+  "collections": {
+    "users": [
+      {
+        "id": "cmw3eyy0v0000wnrooaj4tvbx",
+        "email": "admin@200m.co",
+        "name": "Admin",
+        "passwordHash": "$2b$12$hpI2BlifWLcaladIeJx6guCI11JvVQwIR4yJM9xnRymRJ5Rm6J6Je",
+        "role": "ADMIN",
+        "isActive": true,
+        "lastLoginAt": "2026-11-05T11:05:33.279Z",
+        "createdAt": "2026-11-05T10:39:48.409Z",
+        "updatedAt": "2026-11-05T11:05:33.282Z"
+      }
+    ],
+    "profiles": [
+      {
+        "id": "cmw3ghwbk0000wnwgn3uk5jci",
+        "name": "A200M",
+        "kind": "ZOOMWLB",
+        "loginUrl": "https://bo-a2m.zoomwlb.com/",
+        "targetUrl": "https://bo-a2m.zoomwlb.com/Dashboard/Overview",
+        "buttonSelector": "",
+        "status": "LOGGED_OUT",
+        "lastLoginAt": null,
+        "lastScrapeAt": null,
+        "proxy": "",
+        "notes": "",
+        "dataFields": [],
+        "userDataDir": "",
+        "refreshIntervalMs": 300000,
+        "createdAt": "2026-11-05T11:22:32.288Z",
+        "updatedAt": "2026-11-05T12:13:47.701Z"
+      }
+    ],
+    "profileCredentials": [],
+    "scrapes": [],
+    "settings": [],
+    "activityLogs": []
+  }
+}
