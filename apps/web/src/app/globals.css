@@ -378,10 +378,22 @@ tr:hover td { background: var(--surface-hover); }
   border-radius: var(--radius);
   padding: 28px;
   width: 100%;
-  max-width: 480px;
+  max-width: 720px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.modal-card .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.modal-card .form-grid .form-full {
+  grid-column: 1 / -1;
 }
 
 .modal-card h3 { font-size: 18px; font-weight: 600; }

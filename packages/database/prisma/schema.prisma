@@ -16,17 +16,17 @@ enum UserRole {
 }
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  name           String
-  passwordHash   String
-  role           UserRole  @default(VIEWER)
-  isActive       Boolean   @default(true)
-  lastLoginAt    DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         UserRole  @default(VIEWER)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  activityLogs   ActivityLog[]
+  activityLogs ActivityLog[]
 
   @@map("users")
 }
@@ -48,61 +48,64 @@ enum ProfileStatus {
 }
 
 model Profile {
-  id                 String        @id @default(cuid())
-  name               String        @unique
-  kind               ProfileKind
-  loginUrl           String
-  targetUrl          String
-  buttonSelector     String        @default("")
-  status             ProfileStatus @default(IDLE)
-  lastLoginAt        DateTime?
-  lastScrapeAt       DateTime?
-  proxy              String        @default("")
-  notes              String        @default("")
-  dataFields         Json          @default("[]")
-  userDataDir        String        @default("")
-  refreshIntervalMs  Int           @default(300000)
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
+  id                String        @id @default(cuid())
+  name              String        @unique
+  kind              ProfileKind
+  loginUrl          String
+  targetUrl         String
+  buttonSelector    String        @default("")
+  status            ProfileStatus @default(IDLE)
+  lastLoginAt       DateTime?
+  lastScrapeAt      DateTime?
+  proxy             String        @default("")
+  notes             String        @default("")
+  dataFields        Json          @default("[]")
+  userDataDir       String        @default("")
+  refreshIntervalMs Int           @default(300000)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
 
-  credential         ProfileCredential?
-  scrapes            Scrape[]
+  credential ProfileCredential?
+  scrapes    Scrape[]
 
   @@map("profiles")
 }
 
 model ProfileCredential {
-  id                  String   @id @default(cuid())
-  profileId           String   @unique
-  profile             Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  usernameEncrypted   String
-  passwordEncrypted   String
-  pinEncrypted        String   @default("")
-  otpEmail            String   @default("")
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                String   @id @default(cuid())
+  profileId         String   @unique
+  profile           Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  usernameEncrypted String
+  passwordEncrypted String
+  pinEncrypted      String   @default("")
+  otpEmail          String   @default("")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@map("profile_credentials")
 }
 
 model Scrape {
-  id                     String   @id @default(cuid())
-  profileId              String
-  profile                Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
-  kind                   ProfileKind
-  reportDate             DateTime @db.Date
-  reportDateString       String
-  newRegistrationCount   Int?
-  newDepositCount        Int?
-  totalDepositCount      Int?
-  totalDepositAmount     Decimal? @db.Decimal(18, 2)
-  totalWithdrawalCount   Int?
-  totalWithdrawalAmount  Decimal? @db.Decimal(18, 2)
-  raw                    Json?
-  tables                 Json?
-  scrapedAt              DateTime @default(now())
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                    String      @id @default(cuid())
+  profileId             String
+  profile               Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  kind                  ProfileKind
+  reportDate            DateTime    @db.Date
+  reportDateString      String
+  // Preserve the v1 instant separately from the SQL calendar date.
+  sourceReportDate      DateTime?
+  newRegistrationCount  Int?
+  newDepositCount       Int?
+  totalDepositCount     Int?
+  totalDepositAmount    Decimal?    @db.Decimal(18, 2)
+  totalWithdrawalCount  Int?
+  totalWithdrawalAmount Decimal?    @db.Decimal(18, 2)
+  raw                   Json?
+  data                  Json?
+  tables                Json?
+  scrapedAt             DateTime    @default(now())
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
 
   @@unique([profileId, reportDate])
   @@index([reportDate])
@@ -123,6 +126,7 @@ model Setting {
 // ─── Activity & Audit ───────────────────────────────────────
 
 enum ActorType {
+  ADMIN
   USER
   TELEGRAM
   SYSTEM
@@ -132,14 +136,48 @@ model ActivityLog {
   id         String    @id @default(cuid())
   actorType  ActorType
   actorId    String?
+  actorLabel String    @default("")
   actor      User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
   action     String
   target     String    @default("")
   details    String    @default("")
   meta       Json?
   createdAt  DateTime  @default(now())
+  updatedAt  DateTime? @updatedAt
 
   @@index([createdAt])
   @@index([actorType])
   @@map("activity_logs")
+}
+
+// Complete source files and original EJSON documents are retained so BSON
+// types, unknown fields, __v, nulls, and original timestamps remain recoverable.
+model BackupImport {
+  id           String           @id @default(cuid())
+  sourceName   String
+  sourceSha256 String           @unique
+  sourceBytes  Int
+  sourceText   String           @db.Text
+  version      Json
+  exportedAt   DateTime
+  counts       Json
+  completedAt  DateTime         @default(now())
+  documents    LegacyDocument[]
+
+  @@map("backup_imports")
+}
+
+model LegacyDocument {
+  id            String       @id @default(cuid())
+  importId      String
+  import        BackupImport @relation(fields: [importId], references: [id], onDelete: Restrict)
+  collection    String
+  sourceId      String
+  ordinal       Int
+  payload       Json
+  payloadSha256 String
+
+  @@unique([importId, collection, sourceId])
+  @@unique([importId, collection, ordinal])
+  @@map("legacy_documents")
 }

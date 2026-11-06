@@ -8,5 +8,4 @@ dist/
 *.log
 coverage/
 .DS_Store
-profiles/
 DO DB details.txt

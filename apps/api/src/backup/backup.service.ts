@@ -17,6 +17,8 @@ export interface BackupData {
     scrapes?: any[];
     settings?: any[];
     activityLogs?: any[];
+    backupImports?: any[];
+    legacyDocuments?: any[];
   };
 }
 
@@ -33,7 +35,7 @@ export class BackupService {
   setSchedulerService(service: any) { this.schedulerService = service; }
 
   async exportAll(): Promise<BackupData> {
-    const [users, profiles, profileCredentials, scrapes, settings, activityLogs] =
+    const [users, profiles, profileCredentials, scrapes, settings, activityLogs, backupImports, legacyDocuments] =
       await Promise.all([
         this.prisma.user.findMany(),
         this.prisma.profile.findMany(),
@@ -41,6 +43,8 @@ export class BackupService {
         this.prisma.scrape.findMany(),
         this.prisma.setting.findMany(),
         this.prisma.activityLog.findMany(),
+        this.prisma.backupImport.findMany(),
+        this.prisma.legacyDocument.findMany(),
       ]);
 
     this.logs.logEvent({ type: 'backup', message: 'Backup exported' });
@@ -55,6 +59,8 @@ export class BackupService {
         scrapes,
         settings,
         activityLogs,
+        backupImports,
+        legacyDocuments,
       },
     };
   }
@@ -110,6 +116,8 @@ export class BackupService {
     const skipped: string[] = [];
 
     const deleteOrder = [
+      'legacyDocument',
+      'backupImport',
       'activityLog',
       'scrape',
       'profileCredential',
@@ -125,6 +133,8 @@ export class BackupService {
       { key: 'profileCredentials', model: 'profileCredential' as const },
       { key: 'scrapes', model: 'scrape' as const },
       { key: 'activityLogs', model: 'activityLog' as const },
+      { key: 'backupImports', model: 'backupImport' as const },
+      { key: 'legacyDocuments', model: 'legacyDocument' as const },
     ];
 
     await this.prisma.$transaction(async (tx) => {
