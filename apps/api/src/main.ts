@@ -2,18 +2,29 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import * as bodyParser from 'body-parser';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
 
 process.env.TZ = process.env.TZ || 'Asia/Bangkok';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
+
+  app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+  }));
+
   app.use(bodyParser.json({ limit: '100mb' }));
   app.use(bodyParser.urlencoded({ extended: true, limit: '100mb' }));
 
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
-  app.enableCors({ origin: true, credentials: true });
+
+  const allowedOrigins = process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
+    : ['http://localhost:3000'];
+  app.enableCors({ origin: allowedOrigins, credentials: true });
 
   const config = new DocumentBuilder()
     .setTitle('Scraper Dashboard API')

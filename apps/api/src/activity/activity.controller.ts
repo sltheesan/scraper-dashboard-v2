@@ -16,11 +16,20 @@ export class ActivityController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('actorType') actorType?: ActorType,
+    @Query('action') action?: string,
+    @Query('search') search?: string,
   ) {
     return this.activity.getActivity({
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       actorType,
+      action,
+      search,
     });
+  }
+
+  @Get('actions')
+  getDistinctActions() {
+    return this.activity.getDistinctActions();
   }
 }

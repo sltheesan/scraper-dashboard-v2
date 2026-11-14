@@ -68,6 +68,11 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     this.baseUrl = `https://api.telegram.org/bot${this.token}`;
   }
 
+  private applyToken(token: string) {
+    this.token = token;
+    this.baseUrl = `https://api.telegram.org/bot${this.token}`;
+  }
+
   setScrapesService(service: any) {
     this.scrapesService = service;
   }
@@ -78,11 +83,57 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     await this.loadSettings();
+    const dbToken = await this.loadTokenFromDb();
+    if (dbToken) {
+      this.applyToken(dbToken);
+    }
     if (this.token) {
       await this.startBot();
     } else {
       this.logger.warn('No TELEGRAM_BOT_TOKEN configured, bot disabled');
     }
+  }
+
+  private async loadTokenFromDb(): Promise<string | null> {
+    try {
+      const row = await this.prisma.setting.findUnique({ where: { key: 'telegram' } });
+      const val = row?.value as any;
+      return val?.botToken || null;
+    } catch {
+      return null;
+    }
+  }
+
+  async updateBotToken(newToken: string): Promise<{ ok: boolean; username?: string; error?: string }> {
+    this.stop();
+    this.me = null;
+    this.applyToken(newToken);
+
+    const current = await this.prisma.setting.findUnique({ where: { key: 'telegram' } });
+    const merged = { ...(current?.value as any || {}), botToken: newToken };
+    await this.prisma.setting.upsert({
+      where: { key: 'telegram' },
+      create: { key: 'telegram', value: merged },
+      update: { value: merged },
+    });
+
+    if (!newToken) {
+      this.logger.log('Bot token cleared, bot disabled');
+      return { ok: true };
+    }
+
+    try {
+      await this.startBot();
+      const bot = this.getBotInfo();
+      return { ok: true, username: bot?.username };
+    } catch (err: any) {
+      this.logger.error(`Bot restart failed: ${err.message}`);
+      return { ok: false, error: err.message };
+    }
+  }
+
+  getToken(): string {
+    return this.token ? this.token.slice(0, 6) + '...' + this.token.slice(-4) : '';
   }
 
   onModuleDestroy() {

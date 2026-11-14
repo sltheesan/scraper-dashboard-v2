@@ -76,8 +76,17 @@ export class SettingsController {
   async getTelegram() {
     const settings = await this.settings.getTelegramSettings();
     const bot = this.telegramService?.getBotInfo?.() ?? null;
-    const tokenConfigured = !!this.config.get('TELEGRAM_BOT_TOKEN', '');
-    return { ...settings, bot, tokenConfigured };
+    const tokenPreview = this.telegramService?.getToken?.() ?? '';
+    return { ...settings, bot, tokenPreview };
+  }
+
+  @Post('telegram/bot-token')
+  @Roles('ADMIN')
+  async updateBotToken(@Body() body: { token: string }) {
+    if (!this.telegramService) {
+      return { ok: false, error: 'Telegram service not available' };
+    }
+    return this.telegramService.updateBotToken(body.token || '');
   }
 
   @Patch('telegram')

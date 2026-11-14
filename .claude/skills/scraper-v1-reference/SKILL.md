@@ -3,7 +3,7 @@ name: scraper-v1-reference
 description: >-
   Read-only reference for the v1 scraper system (Node/Fastify/Playwright/MongoDB).
   Use to understand v1 architecture, modules, parsers, scheduler, Telegram bot,
-  and data models when porting functionality to v2.
+  and data models when porting functionality to v2 or comparing behavior.
 ---
 
 # Dashboard Scraper v1 — Reference
@@ -50,6 +50,23 @@ Production: `https://scraper.200m.tech` — Docker container on DigitalOcean VPS
 | schedulesettings | Setting (key='scheduler') | Singleton → key-value in Settings table |
 | telegramsettings | Setting (key='telegram') | Singleton → key-value in Settings table |
 | activitylogs | ActivityLog | Same structure, added enum ActorType |
+
+## Known v1 Security Issues (Pentest Report)
+
+These were identified in a pentest of v1 production and fixed in v2:
+
+| ID | Severity | Issue | v2 Status |
+|---|---|---|---|
+| SCRP-01 | CRITICAL | Unauthenticated VNC at `/vnc/` | N/A — no VNC in v2 |
+| SCRP-02 | CRITICAL | Full app.js served pre-auth | Fixed — Next.js code-splits by route |
+| SCRP-03 | HIGH | No rate limiting on login | Fixed — ThrottlerGuard (5/min) |
+| SCRP-04 | HIGH | SSRF via loginUrl/targetUrl/proxy | Fixed — URL validator blocks private IPs |
+| SCRP-05 | HIGH | All security headers absent | Fixed — Helmet + Next.js headers |
+| SCRP-06 | MEDIUM | Logout accepts unauthed requests | Fixed — JWT guard on logout |
+| SCRP-07 | MEDIUM | Business data in pre-auth JS | Fixed — code splitting |
+| SCRP-08 | MEDIUM | Telegram bot as secondary auth surface | Fixed — restricted mode default |
+| SCRP-09 | LOW | Via header reveals proxy identity | Infra concern — deployment config |
+| SCRP-10 | LOW | No Cache-Control on login | Fixed — no-store on /login |
 
 ## Hazards
 

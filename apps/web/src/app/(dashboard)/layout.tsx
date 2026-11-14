@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
@@ -14,10 +14,48 @@ const NAV_ITEMS = [
   { href: '/settings', label: 'Settings', icon: '⚙', adminOnly: true },
 ];
 
+function formatBangkokTime() {
+  const now = new Date();
+  return now.toLocaleString('en-GB', {
+    timeZone: 'Asia/Bangkok',
+    weekday: 'short',
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user, loading, logout } = useAuth();
+  const [clock, setClock] = useState('');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
+  useEffect(() => {
+    setClock(formatBangkokTime());
+    const id = setInterval(() => setClock(formatBangkokTime()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('theme') as 'dark' | 'light' | null;
+    if (saved) {
+      setTheme(saved);
+      document.documentElement.setAttribute('data-theme', saved);
+    }
+  }, []);
+
+  const toggleTheme = useCallback(() => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  }, [theme]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -58,15 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ))}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="user-info">
-            <div className="user-name">{user.name}</div>
-            <div className="user-role">{user.role}</div>
-          </div>
-          <button className="logout-btn" onClick={logout}>
-            Sign out
-          </button>
-        </div>
+        <div className="sidebar-footer">Scraper Dashboard v2</div>
       </aside>
 
       <main className="main-content">
@@ -77,7 +107,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
              'Dashboard'}
           </h2>
           <div className="top-bar-right">
+            <div className="header-clock">
+              <span>{clock}</span>
+              <span className="clock-tz">ICT</span>
+            </div>
             <span className="env-badge">v2</span>
+            <button className="theme-toggle" onClick={toggleTheme} title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}>
+              {theme === 'dark' ? '☀' : '☾'}
+            </button>
+            <div className="header-user">
+              <span className="header-user-name">{user.name}</span>
+              <span className="header-user-role">{user.role}</span>
+            </div>
+            <button className="header-logout" onClick={logout}>Sign out</button>
           </div>
         </header>
         <div className="page-body">{children}</div>

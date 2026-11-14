@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { join } from 'path';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -25,6 +26,11 @@ import { AppBootstrapService } from './app-bootstrap.service';
       envFilePath: [join(__dirname, '..', '..', '..', '.env'), '.env'],
     }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([{
+      name: 'login',
+      ttl: 60_000,
+      limit: 5,
+    }]),
     PrismaModule,
     AuthModule,
     ProfilesModule,

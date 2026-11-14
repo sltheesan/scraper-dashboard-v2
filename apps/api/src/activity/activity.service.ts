@@ -34,12 +34,25 @@ export class ActivityService {
     page?: number;
     limit?: number;
     actorType?: ActorType;
+    action?: string;
+    search?: string;
   }) {
     const page = params.page ?? 1;
     const limit = params.limit ?? 50;
     const skip = (page - 1) * limit;
 
-    const where = params.actorType ? { actorType: params.actorType } : {};
+    const where: any = {};
+    if (params.actorType) where.actorType = params.actorType;
+    if (params.action) where.action = params.action;
+    if (params.search) {
+      const q = params.search;
+      where.OR = [
+        { action: { contains: q, mode: 'insensitive' } },
+        { target: { contains: q, mode: 'insensitive' } },
+        { details: { contains: q, mode: 'insensitive' } },
+        { actor: { name: { contains: q, mode: 'insensitive' } } },
+      ];
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.activityLog.findMany({
@@ -53,5 +66,14 @@ export class ActivityService {
     ]);
 
     return { items, total, page, limit, pages: Math.ceil(total / limit) };
+  }
+
+  async getDistinctActions(): Promise<string[]> {
+    const rows = await this.prisma.activityLog.findMany({
+      distinct: ['action'],
+      select: { action: true },
+      orderBy: { action: 'asc' },
+    });
+    return rows.map((r) => r.action);
   }
 }

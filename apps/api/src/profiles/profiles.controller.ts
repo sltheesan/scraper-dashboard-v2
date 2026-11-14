@@ -19,6 +19,7 @@ import { ActivityService } from '../activity/activity.service';
 import { LogsService } from '../logs/logs.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard, Roles } from '../auth/roles.guard';
+import { validateProfileUrl, validateProxyUrl } from '../common/url-validator';
 
 @Controller('profiles')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -51,6 +52,9 @@ export class ProfilesController {
   @Post()
   @Roles('ADMIN', 'OPERATOR')
   async create(@Req() req: any, @Body() body: any) {
+    if (body.loginUrl) validateProfileUrl(body.loginUrl, 'loginUrl');
+    if (body.targetUrl) validateProfileUrl(body.targetUrl, 'targetUrl');
+    if (body.proxy) validateProxyUrl(body.proxy);
     try {
       const profile = await this.profiles.create(body);
       this.activity.recordActivity({
@@ -73,6 +77,9 @@ export class ProfilesController {
   @Patch(':id')
   @Roles('ADMIN', 'OPERATOR')
   async update(@Req() req: any, @Param('id') id: string, @Body() body: any) {
+    if (body.loginUrl) validateProfileUrl(body.loginUrl, 'loginUrl');
+    if (body.targetUrl) validateProfileUrl(body.targetUrl, 'targetUrl');
+    if (body.proxy) validateProxyUrl(body.proxy);
     try {
       const profile = await this.profiles.update(id, body);
       this.activity.recordActivity({
