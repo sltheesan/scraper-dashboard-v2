@@ -18,11 +18,11 @@ import { ScrapesService } from '../scrapes/scrapes.service';
 import { ActivityService } from '../activity/activity.service';
 import { LogsService } from '../logs/logs.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard, Roles } from '../auth/roles.guard';
+import { PrivilegesGuard, Privileges } from '../auth/privileges.guard';
 import { validateProfileUrl, validateProxyUrl } from '../common/url-validator';
 
 @Controller('profiles')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PrivilegesGuard)
 @ApiBearerAuth()
 export class ProfilesController {
   private schedulerService: any = null;
@@ -50,7 +50,7 @@ export class ProfilesController {
   }
 
   @Post()
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('profiles.create')
   async create(@Req() req: any, @Body() body: any) {
     if (body.loginUrl) validateProfileUrl(body.loginUrl, 'loginUrl');
     if (body.targetUrl) validateProfileUrl(body.targetUrl, 'targetUrl');
@@ -75,7 +75,7 @@ export class ProfilesController {
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('profiles.edit')
   async update(@Req() req: any, @Param('id') id: string, @Body() body: any) {
     if (body.loginUrl) validateProfileUrl(body.loginUrl, 'loginUrl');
     if (body.targetUrl) validateProfileUrl(body.targetUrl, 'targetUrl');
@@ -99,7 +99,7 @@ export class ProfilesController {
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
+  @Privileges('profiles.delete')
   async remove(@Req() req: any, @Param('id') id: string) {
     const profile = await this.profiles.findOne(id).catch(() => null);
     if (!profile) throw new NotFoundException('Profile not found');
@@ -117,7 +117,7 @@ export class ProfilesController {
   }
 
   @Post(':id/login')
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('profiles.login')
   async startLogin(@Req() req: any, @Param('id') id: string) {
     const profile = await this.profiles.findOne(id).catch(() => null);
     if (!profile) throw new NotFoundException('Profile not found');
@@ -142,7 +142,7 @@ export class ProfilesController {
   }
 
   @Post(':id/login/finish')
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('profiles.login')
   async finishLogin(@Req() req: any, @Param('id') id: string) {
     if (!this.scraper.hasLoginSession(id)) {
       throw new NotFoundException('No active login session');
@@ -173,14 +173,14 @@ export class ProfilesController {
   }
 
   @Post(':id/login/cancel')
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('profiles.login')
   async cancelLogin(@Param('id') id: string) {
     await this.scraper.cancelLogin(id);
     return { ok: true };
   }
 
   @Post(':id/fetch')
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('profiles.fetch')
   async fetchData(
     @Req() req: any,
     @Param('id') id: string,

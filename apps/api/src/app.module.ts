@@ -9,6 +9,7 @@ import { ProfilesModule } from './profiles/profiles.module';
 import { SettingsModule } from './settings/settings.module';
 import { ActivityModule } from './activity/activity.module';
 import { UsersModule } from './users/users.module';
+import { UserGroupsModule } from './user-groups/user-groups.module';
 import { CredentialsModule } from './credentials/credentials.module';
 import { LogsModule } from './logs/logs.module';
 import { ScraperModule } from './scraper/scraper.module';
@@ -37,6 +38,7 @@ import { AppBootstrapService } from './app-bootstrap.service';
     SettingsModule,
     ActivityModule,
     UsersModule,
+    UserGroupsModule,
     CredentialsModule,
     LogsModule,
     ScraperModule,

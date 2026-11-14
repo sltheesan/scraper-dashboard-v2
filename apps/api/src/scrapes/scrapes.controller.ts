@@ -12,10 +12,10 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { ScrapesService } from './scrapes.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard, Roles } from '../auth/roles.guard';
+import { PrivilegesGuard, Privileges } from '../auth/privileges.guard';
 
 @Controller('scrapes')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PrivilegesGuard)
 @ApiBearerAuth()
 export class ScrapesController {
   constructor(
@@ -62,7 +62,7 @@ export class ScrapesController {
   }
 
   @Post('fetch/:profileId')
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('profiles.fetch')
   async fetch(
     @Param('profileId') profileId: string,
     @Body() body: { period?: 'today' | 'yesterday' },

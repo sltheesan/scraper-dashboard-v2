@@ -13,10 +13,10 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { SettingsService } from './settings.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard, Roles } from '../auth/roles.guard';
+import { PrivilegesGuard, Privileges } from '../auth/privileges.guard';
 
 @Controller('settings')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PrivilegesGuard)
 @ApiBearerAuth()
 export class SettingsController {
   private telegramService: any = null;
@@ -40,7 +40,7 @@ export class SettingsController {
   }
 
   @Patch('scheduler')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   async updateScheduler(@Body() body: any) {
     const result = await this.settings.updateSchedulerSettings(body);
     if (this.schedulerService) {
@@ -60,7 +60,7 @@ export class SettingsController {
   }
 
   @Patch('scheduler/platforms/:kind')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   async updatePlatform(
     @Param('kind') kind: string,
     @Body() body: { dayCutover?: string; todayMissing?: string },
@@ -81,7 +81,7 @@ export class SettingsController {
   }
 
   @Post('telegram/bot-token')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   async updateBotToken(@Body() body: { token: string }) {
     if (!this.telegramService) {
       return { ok: false, error: 'Telegram service not available' };
@@ -90,7 +90,7 @@ export class SettingsController {
   }
 
   @Patch('telegram')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   async updateTelegram(@Body() body: any) {
     if (body.sendImage === false && body.sendText === false) {
       throw new BadRequestException(
@@ -109,7 +109,7 @@ export class SettingsController {
   }
 
   @Post('telegram/chat-ids')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   addChatId(@Body() body: { chatId?: string; value?: string }) {
     const chatId = body.chatId || body.value;
     if (!chatId) return { error: 'chatId is required' };
@@ -117,13 +117,13 @@ export class SettingsController {
   }
 
   @Delete('telegram/chat-ids/:chatId')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   removeChatId(@Param('chatId') chatId: string) {
     return this.settings.removeTelegramChatId(chatId);
   }
 
   @Post('telegram/alert-chats')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   addAlertChat(@Body() body: { chatId?: string; value?: string }) {
     const chatId = body.chatId || body.value;
     if (!chatId) return { error: 'chatId is required' };
@@ -131,13 +131,13 @@ export class SettingsController {
   }
 
   @Delete('telegram/alert-chats/:chatId')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   removeAlertChat(@Param('chatId') chatId: string) {
     return this.settings.removeAlertChatId(chatId);
   }
 
   @Post('telegram/usernames')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   addUsername(@Body() body: { username?: string; value?: string }) {
     const username = body.username || body.value;
     if (!username) return { error: 'username is required' };
@@ -145,13 +145,13 @@ export class SettingsController {
   }
 
   @Delete('telegram/usernames/:username')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   removeUsername(@Param('username') username: string) {
     return this.settings.removeUsername(username);
   }
 
   @Post('telegram/test-alert')
-  @Roles('ADMIN')
+  @Privileges('settings.edit')
   async testAlert() {
     if (!this.telegramService) {
       return { ok: false, error: 'Telegram service not available' };

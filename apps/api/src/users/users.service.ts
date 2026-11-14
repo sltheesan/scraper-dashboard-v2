@@ -1,12 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { UserRole } from '@scraper/database';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SUPER_ADMIN_EMAIL } from '../common/privileges';
 
 const USER_SELECT = {
   id: true,
   email: true,
   name: true,
-  role: true,
+  isSuperAdmin: true,
+  groupId: true,
+  group: { select: { id: true, name: true } },
   isActive: true,
   lastLoginAt: true,
   createdAt: true,
@@ -33,17 +35,17 @@ export class UsersService {
     return user;
   }
 
-  async updateRole(id: string, role: UserRole) {
+  async updateGroup(id: string, groupId: string | null) {
     await this.ensureExists(id);
     return this.prisma.user.update({
       where: { id },
-      data: { role },
+      data: { groupId },
       select: USER_SELECT,
     });
   }
 
   async deactivate(id: string) {
-    await this.ensureExists(id);
+    await this.ensureMutable(id);
     return this.prisma.user.update({
       where: { id },
       data: { isActive: false },
@@ -61,7 +63,7 @@ export class UsersService {
   }
 
   async deleteUser(id: string) {
-    await this.ensureExists(id);
+    await this.ensureMutable(id);
     await this.prisma.user.delete({ where: { id } });
     return { deleted: true };
   }
@@ -69,5 +71,14 @@ export class UsersService {
   private async ensureExists(id: string) {
     const user = await this.prisma.user.findUnique({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  private async ensureMutable(id: string) {
+    const user = await this.ensureExists(id);
+    if (user.isSuperAdmin) {
+      throw new ForbiddenException('Super admin account cannot be modified');
+    }
+    return user;
   }
 }

@@ -87,8 +87,8 @@ function formatNum(v: number | null | undefined) {
 export default function ProfileDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { user } = useAuth();
-  const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERATOR';
+  const { user, hasPrivilege } = useAuth();
+  const canEdit = hasPrivilege('profiles.edit');
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [credential, setCredential] = useState<Credential | null>(null);

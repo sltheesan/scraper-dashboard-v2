@@ -3,10 +3,11 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { ActorType } from '@scraper/database';
 import { ActivityService } from './activity.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard } from '../auth/roles.guard';
+import { PrivilegesGuard, Privileges } from '../auth/privileges.guard';
 
 @Controller('activity')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PrivilegesGuard)
+@Privileges('activity.view')
 @ApiBearerAuth()
 export class ActivityController {
   constructor(private readonly activity: ActivityService) {}

@@ -13,10 +13,10 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { CredentialsService } from './credentials.service';
 import { GmailOtpService } from './gmail-otp.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard, Roles } from '../auth/roles.guard';
+import { PrivilegesGuard, Privileges } from '../auth/privileges.guard';
 
 @Controller('profiles/:profileId/credentials')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PrivilegesGuard)
 @ApiBearerAuth()
 export class CredentialsController {
   constructor(
@@ -25,13 +25,13 @@ export class CredentialsController {
   ) {}
 
   @Get()
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('credentials.view')
   getCredentials(@Param('profileId') profileId: string) {
     return this.credentials.getCredentials(profileId);
   }
 
   @Put()
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('credentials.edit')
   setCredentials(
     @Param('profileId') profileId: string,
     @Body() body: { username: string; password: string; pin?: string; otpEmail?: string },
@@ -40,13 +40,13 @@ export class CredentialsController {
   }
 
   @Delete()
-  @Roles('ADMIN')
+  @Privileges('credentials.edit')
   deleteCredentials(@Param('profileId') profileId: string) {
     return this.credentials.deleteCredentials(profileId);
   }
 
   @Post('otp')
-  @Roles('ADMIN', 'OPERATOR')
+  @Privileges('credentials.view')
   async getOtp(@Param('profileId') profileId: string) {
     if (!this.gmailOtp.isConfigured()) {
       throw new BadRequestException(

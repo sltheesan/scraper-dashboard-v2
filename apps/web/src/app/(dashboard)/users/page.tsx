@@ -5,11 +5,18 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 
+interface GroupRecord {
+  id: string;
+  name: string;
+}
+
 interface UserRecord {
   id: string;
   email: string;
   name: string;
-  role: string;
+  isSuperAdmin: boolean;
+  groupId: string | null;
+  group: GroupRecord | null;
   isActive: boolean;
   lastLoginAt: string | null;
   createdAt: string;
@@ -21,24 +28,33 @@ function formatDate(d: string | null) {
 }
 
 export default function UsersPage() {
-  const { user } = useAuth();
+  const { user, hasPrivilege } = useAuth();
   const router = useRouter();
   const [users, setUsers] = useState<UserRecord[]>([]);
+  const [groups, setGroups] = useState<GroupRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [form, setForm] = useState({ email: '', password: '', name: '', groupId: '' });
 
   useEffect(() => {
-    if (user?.role !== 'ADMIN') {
+    if (!hasPrivilege('users.view')) {
       router.replace('/');
       return;
     }
-    loadUsers();
-  }, [user, router]);
+    loadData();
+  }, [user, router, hasPrivilege]);
 
-  async function loadUsers() {
+  async function loadData() {
     try {
-      const data = await api.get<UserRecord[]>('/users');
-      setUsers(data);
+      const [u, g] = await Promise.all([
+        api.get<UserRecord[]>('/users'),
+        hasPrivilege('groups.manage')
+          ? api.get<GroupRecord[]>('/user-groups').catch(() => [])
+          : Promise.resolve([]),
+      ]);
+      setUsers(u);
+      setGroups(g);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -46,11 +62,11 @@ export default function UsersPage() {
     }
   }
 
-  async function changeRole(userId: string, role: string) {
+  async function changeGroup(userId: string, groupId: string) {
     setError('');
     try {
-      await api.patch(`/users/${userId}/role`, { role });
-      await loadUsers();
+      await api.patch(`/users/${userId}/group`, { groupId: groupId || null });
+      await loadData();
     } catch (e: any) {
       setError(e.message);
     }
@@ -61,7 +77,7 @@ export default function UsersPage() {
     try {
       const endpoint = u.isActive ? 'deactivate' : 'activate';
       await api.patch(`/users/${u.id}/${endpoint}`, {});
-      await loadUsers();
+      await loadData();
     } catch (e: any) {
       setError(e.message);
     }
@@ -72,9 +88,27 @@ export default function UsersPage() {
     setError('');
     try {
       await api.delete(`/users/${u.id}`);
-      await loadUsers();
+      await loadData();
     } catch (e: any) {
       setError(e.message);
+    }
+  }
+
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    try {
+      await api.post('/users', {
+        email: form.email,
+        password: form.password,
+        name: form.name,
+        groupId: form.groupId || undefined,
+      });
+      setForm({ email: '', password: '', name: '', groupId: '' });
+      setShowCreate(false);
+      await loadData();
+    } catch (err: any) {
+      setError(err.message);
     }
   }
 
@@ -83,6 +117,47 @@ export default function UsersPage() {
   return (
     <div>
       {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <div style={{ color: 'var(--muted)', fontSize: 14 }}>{users.length} user(s)</div>
+        {hasPrivilege('users.create') && (
+          <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)}>
+            {showCreate ? 'Cancel' : '+ New User'}
+          </button>
+        )}
+      </div>
+
+      {showCreate && (
+        <form onSubmit={handleCreate} className="card" style={{ marginBottom: 20, padding: 20 }}>
+          <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>Create User</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div>
+              <label className="form-label">Name</label>
+              <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+            </div>
+            <div>
+              <label className="form-label">Email</label>
+              <input className="form-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+            </div>
+            <div>
+              <label className="form-label">Password</label>
+              <input className="form-input" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required minLength={6} />
+            </div>
+            <div>
+              <label className="form-label">User Group</label>
+              <select className="form-input" value={form.groupId} onChange={(e) => setForm({ ...form, groupId: e.target.value })}>
+                <option value="">— No Group —</option>
+                {groups.map((g) => (
+                  <option key={g.id} value={g.id}>{g.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <button className="btn btn-primary" type="submit">Create</button>
+          </div>
+        </form>
+      )}
 
       {users.length === 0 ? (
         <div className="empty-state"><p>No users found.</p></div>
@@ -93,55 +168,67 @@ export default function UsersPage() {
               <tr>
                 <th>Name</th>
                 <th>Email</th>
-                <th>Role</th>
+                <th>Group</th>
                 <th>Status</th>
                 <th>Last Login</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td className="cell-name">{u.name}</td>
-                  <td>{u.email}</td>
-                  <td>
-                    <select
-                      className="role-select"
-                      value={u.role}
-                      onChange={(e) => changeRole(u.id, e.target.value)}
-                      disabled={u.id === user?.id}
-                    >
-                      <option value="ADMIN">ADMIN</option>
-                      <option value="OPERATOR">OPERATOR</option>
-                      <option value="VIEWER">VIEWER</option>
-                    </select>
-                  </td>
-                  <td>
-                    <span className={`badge ${u.isActive ? 'badge-active' : 'badge-inactive'}`}>
-                      {u.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="cell-muted">{formatDate(u.lastLoginAt)}</td>
-                  <td className="cell-actions">
-                    {u.id !== user?.id && (
-                      <>
+              {users.map((u) => {
+                const isSelf = u.id === user?.id;
+                const isSuper = u.isSuperAdmin;
+                return (
+                  <tr key={u.id}>
+                    <td className="cell-name">
+                      {u.name}
+                      {isSuper && <span className="badge badge-active" style={{ marginLeft: 8, fontSize: 10 }}>Super Admin</span>}
+                    </td>
+                    <td>{u.email}</td>
+                    <td>
+                      {isSuper ? (
+                        <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>All privileges</span>
+                      ) : (
+                        <select
+                          className="role-select"
+                          value={u.groupId || ''}
+                          onChange={(e) => changeGroup(u.id, e.target.value)}
+                          disabled={isSelf || !hasPrivilege('users.edit')}
+                        >
+                          <option value="">— No Group —</option>
+                          {groups.map((g) => (
+                            <option key={g.id} value={g.id}>{g.name}</option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td>
+                      <span className={`badge ${u.isActive ? 'badge-active' : 'badge-inactive'}`}>
+                        {u.isActive ? 'Active' : 'Inactive'}
+                      </span>
+                    </td>
+                    <td className="cell-muted">{formatDate(u.lastLoginAt)}</td>
+                    <td className="cell-actions">
+                      {!isSelf && !isSuper && hasPrivilege('users.edit') && (
                         <button
                           className={`btn btn-sm ${u.isActive ? 'btn-ghost' : 'btn-primary'}`}
                           onClick={() => toggleActive(u)}
                         >
                           {u.isActive ? 'Deactivate' : 'Activate'}
                         </button>
+                      )}
+                      {!isSelf && !isSuper && hasPrivilege('users.delete') && (
                         <button
                           className="btn btn-sm btn-danger"
                           onClick={() => deleteUser(u)}
                         >
                           Delete
                         </button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

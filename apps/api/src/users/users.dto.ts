@@ -1,7 +1,7 @@
-import { IsEnum, IsString } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
-export class UpdateRoleDto {
+export class UpdateGroupDto {
   @IsString()
-  @IsEnum(['ADMIN', 'OPERATOR', 'VIEWER'])
-  role: 'ADMIN' | 'OPERATOR' | 'VIEWER';
+  @IsOptional()
+  groupId: string | null;
 }

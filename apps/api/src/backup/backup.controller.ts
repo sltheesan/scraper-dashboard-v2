@@ -8,22 +8,22 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { BackupService } from './backup.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { RolesGuard, Roles } from '../auth/roles.guard';
+import { PrivilegesGuard, Privileges } from '../auth/privileges.guard';
 
 @Controller('backup')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, PrivilegesGuard)
 @ApiBearerAuth()
 export class BackupController {
   constructor(private readonly backup: BackupService) {}
 
   @Get()
-  @Roles('ADMIN')
+  @Privileges('backup.export')
   exportBackup() {
     return this.backup.exportAll();
   }
 
   @Post('restore')
-  @Roles('ADMIN')
+  @Privileges('backup.restore')
   async restoreBackup(@Body() body: any) {
     return this.backup.restoreAll(body);
   }

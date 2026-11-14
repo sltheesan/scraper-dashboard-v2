@@ -7,11 +7,12 @@ import { useAuth } from '@/contexts/auth-context';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: '▦' },
-  { href: '/profiles', label: 'Profiles', icon: '◉' },
-  { href: '/logs', label: 'Live Logs', icon: '▤' },
-  { href: '/activity', label: 'Activity', icon: '◷' },
-  { href: '/users', label: 'Users', icon: '♟', adminOnly: true },
-  { href: '/settings', label: 'Settings', icon: '⚙', adminOnly: true },
+  { href: '/profiles', label: 'Profiles', icon: '◉', privilege: 'profiles.view' },
+  { href: '/logs', label: 'Live Logs', icon: '▤', privilege: 'logs.view' },
+  { href: '/activity', label: 'Activity', icon: '◷', privilege: 'activity.view' },
+  { href: '/users', label: 'Users', icon: '♟', privilege: 'users.view' },
+  { href: '/user-groups', label: 'User Groups', icon: '⚑', privilege: 'groups.manage' },
+  { href: '/settings', label: 'Settings', icon: '⚙', privilege: 'settings.view' },
 ];
 
 function formatBangkokTime() {
@@ -32,7 +33,7 @@ function formatBangkokTime() {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, hasPrivilege } = useAuth();
   const [clock, setClock] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -73,6 +74,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!user) return null;
 
+  const roleLabel = user.isSuperAdmin ? 'Super Admin' : (user.groupName || 'No Group');
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -83,7 +86,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <nav className="sidebar-nav">
           {NAV_ITEMS.filter(
-            (item) => !item.adminOnly || user.role === 'ADMIN',
+            (item) => !item.privilege || hasPrivilege(item.privilege),
           ).map((item) => (
             <Link
               key={item.href}
@@ -117,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </button>
             <div className="header-user">
               <span className="header-user-name">{user.name}</span>
-              <span className="header-user-role">{user.role}</span>
+              <span className="header-user-role">{roleLabel}</span>
             </div>
             <button className="header-logout" onClick={logout}>Sign out</button>
           </div>

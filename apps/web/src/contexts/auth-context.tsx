@@ -14,7 +14,10 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'OPERATOR' | 'VIEWER';
+  isSuperAdmin: boolean;
+  groupId: string | null;
+  groupName: string | null;
+  privileges: string[];
 }
 
 interface AuthState {
@@ -22,6 +25,7 @@ interface AuthState {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  hasPrivilege: (privilege: string) => boolean;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -57,8 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const hasPrivilege = useCallback(
+    (privilege: string) => {
+      if (!user) return false;
+      if (user.isSuperAdmin) return true;
+      return user.privileges.includes(privilege);
+    },
+    [user],
+  );
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, hasPrivilege }}>
       {children}
     </AuthContext.Provider>
   );

@@ -28,7 +28,7 @@ interface TelegramSettings {
 }
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, hasPrivilege } = useAuth();
   const router = useRouter();
 
   const [scheduler, setScheduler] = useState<SchedulerSettings>({
@@ -49,7 +49,7 @@ export default function SettingsPage() {
   const [botTokenBusy, setBotTokenBusy] = useState(false);
 
   useEffect(() => {
-    if (user?.role !== 'ADMIN') { router.replace('/'); return; }
+    if (!hasPrivilege('settings.view')) { router.replace('/'); return; }
     Promise.all([
       api.get<{ settings: SchedulerSettings; runtime: any }>('/settings/scheduler')
         .then((res) => res.settings)

@@ -80,9 +80,9 @@ const EMPTY_FORM = {
 const PAGE_SIZE = 20;
 
 export default function ProfilesPage() {
-  const { user } = useAuth();
-  const canEdit = user?.role === 'ADMIN' || user?.role === 'OPERATOR';
-  const canDelete = user?.role === 'ADMIN';
+  const { user, hasPrivilege } = useAuth();
+  const canEdit = hasPrivilege('profiles.edit');
+  const canDelete = hasPrivilege('profiles.delete');
 
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
