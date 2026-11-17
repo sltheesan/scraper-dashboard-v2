@@ -19,6 +19,7 @@ export const ALL_PRIVILEGES = [
   'backup.export',
   'backup.restore',
   'telegram.use',
+  'reports.view',
 ] as const;
 
 export type Privilege = (typeof ALL_PRIVILEGES)[number];
@@ -55,6 +56,10 @@ export const PRIVILEGE_CATEGORIES: Record<string, { label: string; privileges: P
   telegram: {
     label: 'Telegram',
     privileges: ['telegram.use'],
+  },
+  reports: {
+    label: 'Reports',
+    privileges: ['reports.view'],
   },
 };
 

@@ -202,4 +202,27 @@ export class ScrapesService {
       orderBy: { profile: { name: 'asc' } },
     });
   }
+
+  async getReport(opts: {
+    profileIds?: string[];
+    kind?: string;
+    from: Date;
+    to: Date;
+  }) {
+    const where: any = {
+      reportDate: { gte: opts.from, lte: opts.to },
+    };
+    if (opts.profileIds?.length) {
+      where.profileId = { in: opts.profileIds };
+    }
+    if (opts.kind) {
+      where.kind = opts.kind;
+    }
+
+    return this.prisma.scrape.findMany({
+      where,
+      include: { profile: { select: { name: true, kind: true } } },
+      orderBy: [{ reportDate: 'asc' }, { profile: { name: 'asc' } }],
+    });
+  }
 }

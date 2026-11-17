@@ -65,6 +65,25 @@ export class ScrapesController {
     return this.scrapes.getYesterday(profileId);
   }
 
+  @Get('report')
+  @Privileges('reports.view')
+  getReport(
+    @Query('profileIds') profileIds?: string,
+    @Query('kind') kind?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const now = new Date();
+    const fromDate = from ? new Date(from) : new Date(now.getFullYear(), now.getMonth(), 1);
+    const toDate = to ? new Date(to) : now;
+    return this.scrapes.getReport({
+      profileIds: profileIds ? profileIds.split(',') : undefined,
+      kind: kind || undefined,
+      from: fromDate,
+      to: toDate,
+    });
+  }
+
   @Post('fetch/:profileId')
   @Privileges('profiles.fetch')
   async fetch(

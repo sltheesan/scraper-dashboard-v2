@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { href: '/activity', label: 'Activity', icon: '◷', privilege: 'activity.view' },
   { href: '/users', label: 'Users', icon: '♟', privilege: 'users.view' },
   { href: '/user-groups', label: 'User Groups', icon: '⚑', privilege: 'groups.manage' },
+  { href: '/reports', label: 'Reports', icon: '◩', privilege: 'reports.view' },
   { href: '/settings', label: 'Settings', icon: '⚙', privilege: 'settings.view' },
 ];
 
