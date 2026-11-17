@@ -30,6 +30,7 @@ export default function UserGroupsPage() {
   const [editing, setEditing] = useState<GroupRecord | null>(null);
   const [form, setForm] = useState({ name: '', description: '', privileges: [] as string[] });
   const [formOpen, setFormOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!hasPrivilege('groups.manage')) {
@@ -108,6 +109,7 @@ export default function UserGroupsPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
+    setSaving(true);
     try {
       if (editing) {
         await api.patch(`/user-groups/${editing.id}`, form);
@@ -118,6 +120,8 @@ export default function UserGroupsPage() {
       await loadData();
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -133,7 +137,10 @@ export default function UserGroupsPage() {
     }
   }
 
-  const isFormOpen = formOpen;
+  function privilegeLabel(p: string) {
+    const parts = p.split('.');
+    return parts[parts.length - 1];
+  }
 
   if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
 
@@ -141,151 +148,268 @@ export default function UserGroupsPage() {
     <div>
       {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ color: 'var(--muted)', fontSize: 14 }}>{groups.length} group(s)</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ color: 'var(--muted)', fontSize: 14 }}>
+          {groups.length} group{groups.length !== 1 ? 's' : ''}
+        </div>
         <button className="btn btn-primary" onClick={openCreate}>+ New Group</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: isFormOpen ? '1fr 1fr' : '1fr', gap: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: formOpen ? '1fr 1.2fr' : '1fr', gap: 24 }}>
         {/* Groups list */}
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {groups.length === 0 ? (
             <div className="empty-state"><p>No user groups yet. Create one to get started.</p></div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {groups.map((g) => (
+            groups.map((g) => {
+              const isSelected = editing?.id === g.id;
+              const userCount = g._count?.users ?? 0;
+              const privCount = g.privileges.length;
+              return (
                 <div
                   key={g.id}
-                  className="card"
-                  style={{
-                    padding: 16,
-                    cursor: 'pointer',
-                    border: editing?.id === g.id ? '1px solid var(--accent)' : '1px solid var(--border)',
-                    background: 'var(--surface)',
-                    borderRadius: 'var(--radius)',
-                  }}
                   onClick={() => openEdit(g)}
+                  style={{
+                    padding: '16px 20px',
+                    cursor: 'pointer',
+                    border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
+                    background: isSelected ? 'rgba(79, 140, 255, 0.06)' : 'var(--surface)',
+                    borderRadius: 'var(--radius)',
+                    transition: 'border-color 0.15s, background 0.15s',
+                  }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: 15 }}>{g.name}</div>
-                      {g.description && <div style={{ color: 'var(--muted)', fontSize: 13, marginTop: 4 }}>{g.description}</div>}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 2 }}>{g.name}</div>
+                      {g.description && (
+                        <div style={{ color: 'var(--muted)', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {g.description}
+                        </div>
+                      )}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <span className="badge" style={{ fontSize: 11 }}>
-                        {g._count?.users ?? 0} user(s)
+                    <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 16 }}>
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: userCount > 0 ? 'var(--accent)' : 'var(--muted)',
+                        background: userCount > 0 ? 'rgba(79, 140, 255, 0.1)' : 'var(--bg)',
+                        padding: '3px 10px',
+                        borderRadius: 20,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {userCount} user{userCount !== 1 ? 's' : ''}
                       </span>
-                      <span className="badge" style={{ fontSize: 11 }}>
-                        {g.privileges.length} privilege(s)
+                      <span style={{
+                        fontSize: 12,
+                        fontWeight: 600,
+                        color: privCount > 0 ? 'var(--success)' : 'var(--muted)',
+                        background: privCount > 0 ? 'rgba(52, 211, 153, 0.1)' : 'var(--bg)',
+                        padding: '3px 10px',
+                        borderRadius: 20,
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {privCount}/{allPrivileges.length}
                       </span>
                     </div>
                   </div>
+                  {!formOpen && privCount > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 10 }}>
+                      {Object.entries(categories).map(([key, cat]) => {
+                        const count = cat.privileges.filter((p) => g.privileges.includes(p)).length;
+                        if (count === 0) return null;
+                        const full = count === cat.privileges.length;
+                        return (
+                          <span key={key} style={{
+                            fontSize: 11,
+                            fontWeight: 500,
+                            color: full ? 'var(--text)' : 'var(--muted)',
+                            background: 'var(--bg)',
+                            border: '1px solid var(--border)',
+                            padding: '2px 8px',
+                            borderRadius: 4,
+                          }}>
+                            {cat.label} {!full && <span style={{ opacity: 0.6 }}>({count}/{cat.privileges.length})</span>}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              ))}
-            </div>
+              );
+            })
           )}
         </div>
 
         {/* Form panel */}
-        {isFormOpen && (
+        {formOpen && (
           <form onSubmit={handleSubmit} style={{
             background: 'var(--surface)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius)',
-            padding: 20,
+            padding: 24,
             position: 'sticky',
-            top: 80,
-            maxHeight: 'calc(100vh - 120px)',
+            top: 76,
+            maxHeight: 'calc(100vh - 112px)',
             overflowY: 'auto',
+            alignSelf: 'start',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: 16 }}>{editing ? 'Edit Group' : 'New Group'}</h3>
-              <button type="button" className="btn btn-sm btn-ghost" onClick={closeForm}>Close</button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
+                {editing ? 'Edit Group' : 'New Group'}
+              </h3>
+              <button type="button" onClick={closeForm} style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--muted)',
+                fontSize: 20,
+                cursor: 'pointer',
+                padding: '0 4px',
+                lineHeight: 1,
+              }}>×</button>
             </div>
 
-            <div style={{ marginBottom: 12 }}>
-              <label className="form-label">Group Name</label>
-              <input
-                className="form-input"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: 16 }}>
-              <label className="form-label">Description</label>
-              <input
-                className="form-input"
-                value={form.description}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-                placeholder="Optional"
-              />
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <label className="form-label" style={{ margin: 0 }}>
-                Privileges ({form.privileges.length}/{allPrivileges.length})
-              </label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <button type="button" className="btn btn-sm btn-ghost" onClick={selectAll}>All</button>
-                <button type="button" className="btn btn-sm btn-ghost" onClick={clearAll}>None</button>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+              <div>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6, display: 'block' }}>
+                  Group Name
+                </label>
+                <input
+                  className="form-input"
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  required
+                  style={{ width: '100%' }}
+                  placeholder="e.g. Operators"
+                />
+              </div>
+              <div>
+                <label className="form-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6, display: 'block' }}>
+                  Description
+                </label>
+                <input
+                  className="form-input"
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Optional"
+                  style={{ width: '100%' }}
+                />
               </div>
             </div>
 
-            {Object.entries(categories).map(([key, cat]) => {
-              const allChecked = cat.privileges.every((p) => form.privileges.includes(p));
-              const someChecked = cat.privileges.some((p) => form.privileges.includes(p));
-              return (
-                <div key={key} style={{ marginBottom: 16 }}>
-                  <label
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                      fontSize: 13,
-                      color: 'var(--text)',
-                      marginBottom: 6,
-                    }}
-                    onClick={() => toggleCategory(cat)}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={allChecked}
-                      ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked; }}
-                      onChange={() => toggleCategory(cat)}
-                      style={{ accentColor: 'var(--accent)' }}
-                    />
-                    {cat.label}
-                  </label>
-                  <div style={{ paddingLeft: 24, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {cat.privileges.map((p) => (
-                      <label key={p} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 13, color: 'var(--muted)' }}>
+            <div style={{
+              borderTop: '1px solid var(--border)',
+              paddingTop: 16,
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Privileges
+                  <span style={{ marginLeft: 8, color: 'var(--accent)', fontWeight: 700 }}>
+                    {form.privileges.length}
+                  </span>
+                  <span style={{ opacity: 0.5 }}>/{allPrivileges.length}</span>
+                </span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button type="button" onClick={selectAll} style={{
+                    background: 'none', border: '1px solid var(--border)', color: 'var(--muted)',
+                    fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 4, cursor: 'pointer',
+                  }}>Select All</button>
+                  <button type="button" onClick={clearAll} style={{
+                    background: 'none', border: '1px solid var(--border)', color: 'var(--muted)',
+                    fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 4, cursor: 'pointer',
+                  }}>Clear</button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {Object.entries(categories).map(([key, cat]) => {
+                  const allChecked = cat.privileges.every((p) => form.privileges.includes(p));
+                  const someChecked = cat.privileges.some((p) => form.privileges.includes(p));
+                  const checkedCount = cat.privileges.filter((p) => form.privileges.includes(p)).length;
+                  return (
+                    <div key={key} style={{
+                      background: 'var(--bg)',
+                      borderRadius: 'var(--radius-sm)',
+                      padding: '10px 14px',
+                      marginBottom: 2,
+                    }}>
+                      <label
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 10,
+                          cursor: 'pointer',
+                          marginBottom: someChecked || allChecked ? 8 : 0,
+                        }}
+                        onClick={(e) => { e.preventDefault(); toggleCategory(cat); }}
+                      >
                         <input
                           type="checkbox"
-                          checked={form.privileges.includes(p)}
-                          onChange={() => togglePrivilege(p)}
-                          style={{ accentColor: 'var(--accent)' }}
+                          checked={allChecked}
+                          ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked; }}
+                          onChange={() => toggleCategory(cat)}
+                          style={{ accentColor: 'var(--accent)', width: 15, height: 15 }}
                         />
-                        {p}
+                        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', flex: 1 }}>
+                          {cat.label}
+                        </span>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 600,
+                          color: allChecked ? 'var(--success)' : checkedCount > 0 ? 'var(--accent)' : 'var(--muted)',
+                          opacity: allChecked ? 1 : 0.8,
+                        }}>
+                          {allChecked ? 'All' : `${checkedCount}/${cat.privileges.length}`}
+                        </span>
                       </label>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                        gap: '2px 12px',
+                        paddingLeft: 25,
+                      }}>
+                        {cat.privileges.map((p) => (
+                          <label key={p} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 7,
+                            cursor: 'pointer',
+                            fontSize: 12,
+                            color: form.privileges.includes(p) ? 'var(--text)' : 'var(--muted)',
+                            padding: '3px 0',
+                            transition: 'color 0.1s',
+                          }}>
+                            <input
+                              type="checkbox"
+                              checked={form.privileges.includes(p)}
+                              onChange={() => togglePrivilege(p)}
+                              style={{ accentColor: 'var(--accent)', width: 14, height: 14 }}
+                            />
+                            {privilegeLabel(p)}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
-              <button className="btn btn-primary" type="submit">
-                {editing ? 'Update' : 'Create'}
+            <div style={{
+              display: 'flex',
+              gap: 10,
+              marginTop: 20,
+              paddingTop: 16,
+              borderTop: '1px solid var(--border)',
+            }}>
+              <button className="btn btn-primary" type="submit" disabled={saving} style={{ flex: 1 }}>
+                {saving ? 'Saving…' : editing ? 'Update Group' : 'Create Group'}
               </button>
               {editing && (
                 <button
                   type="button"
                   className="btn btn-danger"
                   onClick={() => handleDelete(editing)}
+                  style={{ flexShrink: 0 }}
                 >
                   Delete
                 </button>
