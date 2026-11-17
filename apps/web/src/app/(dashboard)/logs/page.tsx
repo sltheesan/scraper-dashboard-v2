@@ -79,7 +79,7 @@ export default function LogsPage() {
         <div className="logs-status">
           <span className={`status-dot ${connected ? 'status-logged_in' : 'status-error'}`} />
           {connected ? 'Connected' : 'Disconnected'}
-          <span className="cell-muted" style={{ marginLeft: 12 }}>{logs.length} events</span>
+          <span className="cell-muted ml-3">{logs.length} events</span>
         </div>
         <div className="logs-controls">
           <button

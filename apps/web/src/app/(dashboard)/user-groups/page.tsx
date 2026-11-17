@@ -146,18 +146,18 @@ export default function UserGroupsPage() {
 
   return (
     <div>
-      {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && <div className="error-msg mb-4">{error}</div>}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <div style={{ color: 'var(--muted)', fontSize: 14 }}>
+      <div className="flex justify-between items-center mb-5">
+        <div className="text-muted text-sm">
           {groups.length} group{groups.length !== 1 ? 's' : ''}
         </div>
         <button className="btn btn-primary" onClick={openCreate}>+ New Group</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: formOpen ? '1fr 1.2fr' : '1fr', gap: 24 }}>
+      <div className={`grid gap-6 ${formOpen ? 'grid-cols-1 lg:grid-cols-[1fr_1.2fr]' : 'grid-cols-1'}`}>
         {/* Groups list */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="flex flex-col gap-2.5">
           {groups.length === 0 ? (
             <div className="empty-state"><p>No user groups yet. Create one to get started.</p></div>
           ) : (
@@ -169,66 +169,47 @@ export default function UserGroupsPage() {
                 <div
                   key={g.id}
                   onClick={() => openEdit(g)}
-                  style={{
-                    padding: '16px 20px',
-                    cursor: 'pointer',
-                    border: isSelected ? '1px solid var(--accent)' : '1px solid var(--border)',
-                    background: isSelected ? 'rgba(79, 140, 255, 0.06)' : 'var(--surface)',
-                    borderRadius: 'var(--radius)',
-                    transition: 'border-color 0.15s, background 0.15s',
-                  }}
+                  className={`px-5 py-4 cursor-pointer rounded border transition-colors ${
+                    isSelected
+                      ? 'border-accent bg-accent/[0.06]'
+                      : 'border-border bg-surface hover:border-[var(--surface-hover)]'
+                  }`}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, fontSize: 15, marginBottom: 2 }}>{g.name}</div>
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-[15px] mb-0.5">{g.name}</div>
                       {g.description && (
-                        <div style={{ color: 'var(--muted)', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div className="text-muted text-[13px] overflow-hidden text-ellipsis whitespace-nowrap">
                           {g.description}
                         </div>
                       )}
                     </div>
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0, marginLeft: 16 }}>
-                      <span style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: userCount > 0 ? 'var(--accent)' : 'var(--muted)',
-                        background: userCount > 0 ? 'rgba(79, 140, 255, 0.1)' : 'var(--bg)',
-                        padding: '3px 10px',
-                        borderRadius: 20,
-                        whiteSpace: 'nowrap',
-                      }}>
+                    <div className="flex gap-2 shrink-0 ml-4">
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap ${
+                        userCount > 0
+                          ? 'text-accent bg-accent/10'
+                          : 'text-muted bg-bg'
+                      }`}>
                         {userCount} user{userCount !== 1 ? 's' : ''}
                       </span>
-                      <span style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: privCount > 0 ? 'var(--success)' : 'var(--muted)',
-                        background: privCount > 0 ? 'rgba(52, 211, 153, 0.1)' : 'var(--bg)',
-                        padding: '3px 10px',
-                        borderRadius: 20,
-                        whiteSpace: 'nowrap',
-                      }}>
+                      <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full whitespace-nowrap ${
+                        privCount > 0
+                          ? 'text-success bg-success/10'
+                          : 'text-muted bg-bg'
+                      }`}>
                         {privCount}/{allPrivileges.length}
                       </span>
                     </div>
                   </div>
                   {!formOpen && privCount > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 10 }}>
+                    <div className="flex flex-wrap gap-1 mt-2.5">
                       {Object.entries(categories).map(([key, cat]) => {
                         const count = cat.privileges.filter((p) => g.privileges.includes(p)).length;
                         if (count === 0) return null;
                         const full = count === cat.privileges.length;
                         return (
-                          <span key={key} style={{
-                            fontSize: 11,
-                            fontWeight: 500,
-                            color: full ? 'var(--text)' : 'var(--muted)',
-                            background: 'var(--bg)',
-                            border: '1px solid var(--border)',
-                            padding: '2px 8px',
-                            borderRadius: 4,
-                          }}>
-                            {cat.label} {!full && <span style={{ opacity: 0.6 }}>({count}/{cat.privileges.length})</span>}
+                          <span key={key} className={`text-[11px] font-medium bg-bg border border-border px-2 py-0.5 rounded ${full ? 'text-[var(--text)]' : 'text-muted'}`}>
+                            {cat.label} {!full && <span className="opacity-60">({count}/{cat.privileges.length})</span>}
                           </span>
                         );
                       })}
@@ -242,108 +223,87 @@ export default function UserGroupsPage() {
 
         {/* Form panel */}
         {formOpen && (
-          <form onSubmit={handleSubmit} style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            padding: 24,
-            position: 'sticky',
-            top: 76,
-            maxHeight: 'calc(100vh - 112px)',
-            overflowY: 'auto',
-            alignSelf: 'start',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-              <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700 }}>
+          <form
+            onSubmit={handleSubmit}
+            className="bg-surface border border-border rounded p-6 lg:sticky lg:top-[76px] lg:max-h-[calc(100vh-112px)] lg:overflow-y-auto lg:self-start"
+          >
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-[17px] font-bold">
                 {editing ? 'Edit Group' : 'New Group'}
               </h3>
-              <button type="button" onClick={closeForm} style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--muted)',
-                fontSize: 20,
-                cursor: 'pointer',
-                padding: '0 4px',
-                lineHeight: 1,
-              }}>×</button>
+              <button
+                type="button"
+                onClick={closeForm}
+                className="bg-transparent border-none text-muted text-xl cursor-pointer px-1 leading-none hover:text-[var(--text)]"
+              >
+                x
+              </button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
               <div>
-                <label className="form-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6, display: 'block' }}>
+                <label className="text-[10px] font-semibold text-muted uppercase tracking-wide mb-1.5 block">
                   Group Name
                 </label>
                 <input
-                  className="form-input"
+                  className="form-input w-full"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   required
-                  style={{ width: '100%' }}
                   placeholder="e.g. Operators"
                 />
               </div>
               <div>
-                <label className="form-label" style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 6, display: 'block' }}>
+                <label className="text-[10px] font-semibold text-muted uppercase tracking-wide mb-1.5 block">
                   Description
                 </label>
                 <input
-                  className="form-input"
+                  className="form-input w-full"
                   value={form.description}
                   onChange={(e) => setForm({ ...form, description: e.target.value })}
                   placeholder="Optional"
-                  style={{ width: '100%' }}
                 />
               </div>
             </div>
 
-            <div style={{
-              borderTop: '1px solid var(--border)',
-              paddingTop: 16,
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <div className="border-t border-border pt-4">
+              <div className="flex justify-between items-center mb-3.5">
+                <span className="text-[10px] font-semibold text-muted uppercase tracking-wide">
                   Privileges
-                  <span style={{ marginLeft: 8, color: 'var(--accent)', fontWeight: 700 }}>
+                  <span className="ml-2 text-accent font-bold">
                     {form.privileges.length}
                   </span>
-                  <span style={{ opacity: 0.5 }}>/{allPrivileges.length}</span>
+                  <span className="opacity-50">/{allPrivileges.length}</span>
                 </span>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button type="button" onClick={selectAll} style={{
-                    background: 'none', border: '1px solid var(--border)', color: 'var(--muted)',
-                    fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 4, cursor: 'pointer',
-                  }}>Select All</button>
-                  <button type="button" onClick={clearAll} style={{
-                    background: 'none', border: '1px solid var(--border)', color: 'var(--muted)',
-                    fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 4, cursor: 'pointer',
-                  }}>Clear</button>
+                <div className="flex gap-1.5">
+                  <button
+                    type="button"
+                    onClick={selectAll}
+                    className="bg-transparent border border-border text-muted text-[11px] font-semibold px-2.5 py-0.5 rounded cursor-pointer hover:bg-surface-hover transition-colors"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={clearAll}
+                    className="bg-transparent border border-border text-muted text-[11px] font-semibold px-2.5 py-0.5 rounded cursor-pointer hover:bg-surface-hover transition-colors"
+                  >
+                    Clear
+                  </button>
                 </div>
               </div>
 
-              <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+              <div className="border border-border rounded-sm overflow-hidden">
                 {Object.entries(categories).map(([key, cat], idx) => {
                   const allChecked = cat.privileges.every((p) => form.privileges.includes(p));
                   const someChecked = cat.privileges.some((p) => form.privileges.includes(p));
                   return (
-                    <div key={key} style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 0,
-                      borderBottom: idx < Object.keys(categories).length - 1 ? '1px solid var(--border)' : 'none',
-                      background: 'var(--bg)',
-                    }}>
+                    <div
+                      key={key}
+                      className={`flex items-center bg-bg ${idx < Object.keys(categories).length - 1 ? 'border-b border-border' : ''}`}
+                    >
                       <label
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          cursor: 'pointer',
-                          padding: '8px 12px',
-                          width: 130,
-                          flexShrink: 0,
-                          borderRight: '1px solid var(--border)',
-                          background: allChecked ? 'rgba(79, 140, 255, 0.06)' : 'transparent',
-                        }}
+                        className={`flex items-center gap-2 cursor-pointer py-2 px-3 w-[130px] shrink-0 border-r border-border ${allChecked ? 'bg-accent/[0.06]' : 'bg-transparent'}`}
                         onClick={(e) => { e.preventDefault(); toggleCategory(cat); }}
                       >
                         <input
@@ -351,36 +311,25 @@ export default function UserGroupsPage() {
                           checked={allChecked}
                           ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked; }}
                           onChange={() => toggleCategory(cat)}
-                          style={{ accentColor: 'var(--accent)', width: 14, height: 14, flexShrink: 0 }}
+                          className="accent-accent w-3.5 h-3.5 shrink-0"
                         />
-                        <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--text)', whiteSpace: 'nowrap' }}>
+                        <span className="font-semibold text-xs text-[var(--text)] whitespace-nowrap">
                           {cat.label}
                         </span>
                       </label>
-                      <div style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '0 4px',
-                        padding: '4px 10px',
-                        flex: 1,
-                      }}>
+                      <div className="flex flex-wrap gap-x-1 gap-y-0 px-2.5 py-1 flex-1">
                         {cat.privileges.map((p) => (
-                          <label key={p} style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 5,
-                            cursor: 'pointer',
-                            fontSize: 12,
-                            color: form.privileges.includes(p) ? 'var(--text)' : 'var(--muted)',
-                            padding: '4px 6px',
-                            borderRadius: 3,
-                            transition: 'color 0.1s',
-                          }}>
+                          <label
+                            key={p}
+                            className={`flex items-center gap-[5px] cursor-pointer text-xs px-1.5 py-1 rounded-sm transition-colors ${
+                              form.privileges.includes(p) ? 'text-[var(--text)]' : 'text-muted'
+                            }`}
+                          >
                             <input
                               type="checkbox"
                               checked={form.privileges.includes(p)}
                               onChange={() => togglePrivilege(p)}
-                              style={{ accentColor: 'var(--accent)', width: 13, height: 13 }}
+                              className="accent-accent w-[13px] h-[13px]"
                             />
                             {privilegeLabel(p)}
                           </label>
@@ -392,22 +341,15 @@ export default function UserGroupsPage() {
               </div>
             </div>
 
-            <div style={{
-              display: 'flex',
-              gap: 10,
-              marginTop: 20,
-              paddingTop: 16,
-              borderTop: '1px solid var(--border)',
-            }}>
-              <button className="btn btn-primary" type="submit" disabled={saving} style={{ flex: 1 }}>
-                {saving ? 'Saving…' : editing ? 'Update Group' : 'Create Group'}
+            <div className="flex gap-2.5 mt-5 pt-4 border-t border-border">
+              <button className="btn btn-primary flex-1" type="submit" disabled={saving}>
+                {saving ? 'Saving...' : editing ? 'Update Group' : 'Create Group'}
               </button>
               {editing && (
                 <button
                   type="button"
-                  className="btn btn-danger"
+                  className="btn btn-danger shrink-0"
                   onClick={() => handleDelete(editing)}
-                  style={{ flexShrink: 0 }}
                 >
                   Delete
                 </button>

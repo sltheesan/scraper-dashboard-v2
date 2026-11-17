@@ -458,8 +458,8 @@ export default function ProfilesPage() {
                 />
               </label>
 
-              <div className="form-full" style={{ borderTop: '1px solid var(--border)', paddingTop: 16, marginTop: 4 }}>
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)', display: 'block', marginBottom: 12 }}>
+              <div className="form-full border-t border-border pt-4 mt-1">
+                <span className="text-sm font-semibold block mb-3">
                   Credentials
                 </span>
                 <div className="form-grid">
@@ -504,10 +504,10 @@ export default function ProfilesPage() {
               </div>
 
               <div className="data-fields-editor form-full">
-                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
+                <span className="text-sm font-semibold">
                   Data Fields
                 </span>
-                <p style={{ fontSize: 12, color: 'var(--muted)', margin: '4px 0 8px' }}>
+                <p className="text-xs text-muted mt-1 mb-2">
                   Element IDs on the page to scrape values from.
                 </p>
                 {form.dataFields.map((df, i) => (
@@ -573,7 +573,7 @@ export default function ProfilesPage() {
 
       {loginSession && (
         <div className="modal-overlay" onClick={() => {}}>
-          <div className="modal-card" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 500 }}>
+          <div className="modal-card max-w-[500px]" onClick={(e) => e.stopPropagation()}>
             <h3>Login session — {loginSession.name}</h3>
 
             {loginSession.cred ? (
@@ -616,25 +616,24 @@ export default function ProfilesPage() {
                 )}
               </div>
             ) : (
-              <p style={{ fontSize: 13, color: 'var(--muted)', fontStyle: 'italic' }}>
+              <p className="text-[13px] text-muted italic">
                 No credentials saved for this profile.
               </p>
             )}
 
-            <ol style={{ margin: '0', paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6, color: 'var(--muted)', fontSize: 13 }}>
+            <ol className="m-0 pl-5 flex flex-col gap-1.5 text-muted text-[13px]">
               <li>Complete the login in the browser window on the server.</li>
               <li>Come back here and click <strong>Save session</strong>.</li>
             </ol>
             {loginSession.alreadyOpen && (
-              <p style={{ color: 'var(--muted)', fontStyle: 'italic', fontSize: 13 }}>
+              <p className="text-muted italic text-[13px]">
                 A login window for this profile is already open.
               </p>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div className="flex items-center gap-3 flex-wrap">
               <button
-                className="btn btn-sm"
-                style={{ background: 'var(--warning, #d97706)', color: '#fff', border: 'none' }}
+                className="btn btn-sm bg-warning text-white border-none"
                 disabled={otpBusy}
                 onClick={handleGetOtp}
               >
@@ -647,11 +646,11 @@ export default function ProfilesPage() {
                 </span>
               )}
               {otpError && (
-                <span style={{ fontSize: 13, color: 'var(--error, #ef4444)' }}>{otpError}</span>
+                <span className="text-[13px] text-error">{otpError}</span>
               )}
             </div>
             {otpResult && !otpResult.otp && (
-              <p style={{ fontSize: 13, color: 'var(--muted)' }}>
+              <p className="text-[13px] text-muted">
                 No OTP code found in recent emails.
               </p>
             )}
@@ -753,7 +752,7 @@ export default function ProfilesPage() {
 
             <div className="fetch-card-foot">
               <span className="fetch-card-dot" /> Scraper Dashboard · live fetch
-              <button className="btn btn-primary" style={{ marginLeft: 'auto' }} onClick={() => setFetchResult(null)}>Close</button>
+              <button className="btn btn-primary ml-auto" onClick={() => setFetchResult(null)}>Close</button>
             </div>
           </div>
         </div>
@@ -782,11 +781,11 @@ export default function ProfilesPage() {
                 {paged.map((p) => (
                   <tr key={p.id}>
                     <td className="cell-name">
-                      <Link href={`/profiles/${p.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                      <Link href={`/profiles/${p.id}`} className="text-inherit no-underline">
                         {p.name}
                       </Link>
                     </td>
-                    <td className="cell-muted" style={{ maxWidth: 240, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td className="cell-muted max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap">
                       {p.targetUrl}
                     </td>
                     <td>

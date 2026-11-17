@@ -153,11 +153,11 @@ export default function SettingsPage() {
 
   return (
     <div className="settings-page">
-      {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
-      {success && <div className="success-msg" style={{ marginBottom: 16 }}>{success}</div>}
+      {error && <div className="error-msg mb-4">{error}</div>}
+      {success && <div className="success-msg mb-4">{success}</div>}
 
       <div className="settings-grid">
-        {/* ── Left column: Scheduler ── */}
+        {/* Scheduler */}
         <section className="card settings-section">
           <h3>Scheduler</h3>
           <form onSubmit={saveScheduler}>
@@ -213,41 +213,39 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="form-actions" style={{ marginTop: 12 }}>
+            <div className="form-actions mt-3">
               <button type="submit" className="btn btn-primary">Save Scheduler</button>
             </div>
           </form>
         </section>
 
-        {/* ── Right column: Platform Cutover ── */}
+        {/* Platform Cutover */}
         <section className="card settings-section">
           <h3>Platform Cutover</h3>
-          <p style={{ color: 'var(--muted)', fontSize: 12, marginBottom: 12 }}>
+          <p className="text-muted text-xs mb-3">
             Business day boundary (ICT). Daily capture runs 15 min after.
           </p>
           {['cgaming', 'zoomwlb'].map((kind) => {
             const cfg = scheduler.platforms?.[kind] || { dayCutover: '11:00', todayMissing: 'calm' };
             return (
-              <div key={kind} style={{ marginBottom: 16 }}>
-                <div style={{ fontWeight: 600, fontSize: 13, textTransform: 'uppercase', marginBottom: 8, color: 'var(--text)' }}>
+              <div key={kind} className="mb-4">
+                <div className="font-semibold text-[13px] uppercase mb-2">
                   {kind}
                 </div>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                  <label style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div className="flex gap-3 items-center flex-wrap">
+                  <label className="text-[13px] flex items-center gap-1.5">
                     Cutover
                     <input
                       type="time"
-                      className="settings-input"
-                      style={{ width: 110 }}
+                      className="settings-input w-[110px]"
                       value={cfg.dayCutover}
                       onChange={(e) => savePlatform(kind, { ...cfg, dayCutover: e.target.value })}
                     />
                   </label>
-                  <label style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <label className="text-[13px] flex items-center gap-1.5">
                     Today Missing
                     <select
-                      className="settings-input"
-                      style={{ width: 'auto' }}
+                      className="settings-input w-auto"
                       value={cfg.todayMissing}
                       onChange={(e) => savePlatform(kind, { ...cfg, todayMissing: e.target.value })}
                     >
@@ -261,7 +259,7 @@ export default function SettingsPage() {
           })}
         </section>
 
-        {/* ── Full width: Telegram Bot ── */}
+        {/* Telegram Bot */}
         <section className="card settings-section settings-full">
           <h3>Telegram Bot</h3>
 
@@ -270,24 +268,24 @@ export default function SettingsPage() {
             {telegram.bot ? (
               <span>
                 <strong>@{telegram.bot.username}</strong>
-                <span style={{ color: 'var(--muted)', marginLeft: 6 }}>ID: {telegram.bot.id}</span>
+                <span className="text-muted ml-1.5">ID: {telegram.bot.id}</span>
                 {telegram.tokenPreview && (
-                  <span style={{ color: 'var(--muted)', marginLeft: 10, opacity: 0.6 }}>
+                  <span className="text-muted ml-2.5 opacity-60">
                     {telegram.tokenPreview}
                   </span>
                 )}
               </span>
             ) : (
-              <span style={{ color: 'var(--muted)' }}>
+              <span className="text-muted">
                 No bot connected
                 {telegram.tokenPreview && (
-                  <span style={{ marginLeft: 10, opacity: 0.6 }}>{telegram.tokenPreview}</span>
+                  <span className="ml-2.5 opacity-60">{telegram.tokenPreview}</span>
                 )}
               </span>
             )}
           </div>
 
-          <div className="settings-token-row" style={{ marginBottom: 16 }}>
+          <div className="settings-token-row mb-4">
             <input
               placeholder="Paste new bot token..."
               value={botToken}
@@ -303,8 +301,8 @@ export default function SettingsPage() {
             </button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-            {/* Left sub-column: toggles */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Toggles */}
             <div>
               <div className="settings-row">
                 <div className="settings-row-label">
@@ -333,15 +331,15 @@ export default function SettingsPage() {
                 </label>
               </div>
 
-              <div className="form-actions" style={{ marginTop: 12 }}>
+              <div className="form-actions mt-3">
                 <button type="button" className="btn btn-primary" onClick={saveTelegram}>Save Telegram</button>
                 <button type="button" className="btn btn-ghost" onClick={testAlert}>Test Alert</button>
               </div>
             </div>
 
-            {/* Right sub-column: lists */}
+            {/* Lists */}
             <div>
-              <div className="list-section" style={{ marginTop: 0, paddingTop: 0, borderTop: 'none' }}>
+              <div className="list-section !mt-0 !pt-0 !border-t-0">
                 <h4>Allowed Chat IDs</h4>
                 <div className="list-items">
                   {telegram.allowedChatIds.map((id) => (
@@ -392,10 +390,10 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* ── Backup & Restore ── */}
+        {/* Backup */}
         <section className="card settings-section settings-full">
           <h3>Backup &amp; Restore</h3>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div className="flex gap-3 items-center">
             <button
               className="btn btn-primary"
               onClick={async () => {
@@ -416,12 +414,12 @@ export default function SettingsPage() {
             >
               Download Backup
             </button>
-            <label className="btn btn-ghost" style={{ cursor: 'pointer' }}>
+            <label className="btn btn-ghost cursor-pointer">
               Restore from File
               <input
                 type="file"
                 accept=".json"
-                style={{ display: 'none' }}
+                className="hidden"
                 onChange={async (e) => {
                   const file = e.target.files?.[0];
                   if (!file) return;

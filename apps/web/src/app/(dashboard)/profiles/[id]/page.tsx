@@ -199,19 +199,19 @@ export default function ProfileDetailPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: 20 }}>
-        <Link href="/profiles" style={{ color: 'var(--muted)', fontSize: 14 }}>
+      <div className="mb-5">
+        <Link href="/profiles" className="text-muted text-sm">
           ← Back to Profiles
         </Link>
       </div>
 
-      {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && <div className="error-msg mb-4">{error}</div>}
 
       <div className="detail-grid">
         <div className="card">
           <div className="detail-header">
             <div>
-              <h3 style={{ fontSize: 20, fontWeight: 700 }}>{profile.name}</h3>
+              <h3 className="text-xl font-bold">{profile.name}</h3>
               <span className={`badge badge-${profile.kind.toLowerCase()}`}>{profile.kind}</span>
             </div>
             <div className="detail-status">
@@ -296,7 +296,7 @@ export default function ProfileDetailPage() {
           )}
 
           {canEdit && (
-            <div className="detail-actions" style={{ marginTop: 8 }}>
+            <div className="detail-actions mt-2">
               <button
                 className="btn btn-primary"
                 disabled={!!fetching}
@@ -317,8 +317,8 @@ export default function ProfileDetailPage() {
 
         {canEdit && (
           <div className="card">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <h4 style={{ fontSize: 16, fontWeight: 600 }}>Credentials</h4>
+            <div className="flex justify-between items-center mb-4">
+              <h4 className="text-base font-semibold">Credentials</h4>
               {credential && !editingCred && (
                 <button className="btn btn-sm btn-ghost" onClick={() => {
                   setCredForm({
@@ -333,7 +333,7 @@ export default function ProfileDetailPage() {
             </div>
 
             {editingCred ? (
-              <form onSubmit={handleSaveCred} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <form onSubmit={handleSaveCred} className="flex flex-col gap-3.5">
                 <label><span>Username</span><input value={credForm.username} onChange={(e) => setCredForm({ ...credForm, username: e.target.value })} /></label>
                 <label><span>Password</span><input value={credForm.password} onChange={(e) => setCredForm({ ...credForm, password: e.target.value })} /></label>
                 <label><span>PIN</span><input value={credForm.pin} onChange={(e) => setCredForm({ ...credForm, pin: e.target.value })} /></label>
@@ -364,7 +364,7 @@ export default function ProfileDetailPage() {
               </div>
             ) : (
               <div>
-                <p style={{ color: 'var(--muted)', marginBottom: 12 }}>No credentials set.</p>
+                <p className="text-muted mb-3">No credentials set.</p>
                 <button className="btn btn-sm btn-primary" onClick={() => setEditingCred(true)}>Add Credentials</button>
               </div>
             )}
@@ -390,12 +390,12 @@ export default function ProfileDetailPage() {
           </div>
 
           {fetchResult.loggedIn === false ? (
-            <div style={{ color: fetchResult.accessDenied ? 'var(--error)' : 'var(--warning)', fontSize: 14 }}>
+            <div className={`text-sm ${fetchResult.accessDenied ? 'text-error' : 'text-warning'}`}>
               {fetchResult.accessDenied
                 ? 'The account was bounced to an Access-Denied page. Re-login this profile, or check its account permission / IP allowlist.'
                 : 'Session expired. Click Login above to re-authenticate.'}
               {fetchResult.url && (
-                <div style={{ marginTop: 8, color: 'var(--muted)', fontSize: 12 }}>
+                <div className="mt-2 text-muted text-xs">
                   Landing URL: {fetchResult.url}
                 </div>
               )}
@@ -406,9 +406,7 @@ export default function ProfileDetailPage() {
                 {Object.entries(METRIC_LABELS).map(([key, label]) => (
                   <div key={key} className="fetch-metric">
                     <div className="fetch-metric-label">{label}</div>
-                    <div className="fetch-metric-value" style={{
-                      color: key.includes('Amount') ? '#82aaff' : 'var(--text)',
-                    }}>
+                    <div className={`fetch-metric-value ${key.includes('Amount') ? 'text-accent' : 'text-[var(--text)]'}`}>
                       {key.includes('Amount')
                         ? formatAmount(fetchResult.parsed!.data[key])
                         : formatNum(fetchResult.parsed!.data[key])}
@@ -428,10 +426,10 @@ export default function ProfileDetailPage() {
               )}
             </>
           ) : (
-            <div style={{ color: 'var(--muted)', fontSize: 14 }}>
+            <div className="text-muted text-sm">
               Logged in, but no data could be parsed from the page.
               {fetchResult.tables && (
-                <div style={{ marginTop: 8 }}>
+                <div className="mt-2">
                   Found {fetchResult.tables.length} table{fetchResult.tables.length !== 1 ? 's' : ''} on the page.
                   {fetchResult.tables.length === 0 && (
                     <span> Check that the target URL points to the correct report page.</span>
@@ -439,7 +437,7 @@ export default function ProfileDetailPage() {
                 </div>
               )}
               {fetchResult.fields && Object.keys(fetchResult.fields).length > 0 && (
-                <div style={{ marginTop: 8 }}>
+                <div className="mt-2">
                   Extracted {Object.keys(fetchResult.fields).length} data field{Object.keys(fetchResult.fields).length !== 1 ? 's' : ''}.
                 </div>
               )}
@@ -448,8 +446,8 @@ export default function ProfileDetailPage() {
         </div>
       )}
 
-      <section style={{ marginTop: 24 }}>
-        <h4 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Recent Scrapes</h4>
+      <section className="mt-6">
+        <h4 className="text-base font-semibold mb-3">Recent Scrapes</h4>
         {scrapes.length === 0 ? (
           <div className="empty-state"><p>No scrape data yet.</p></div>
         ) : (

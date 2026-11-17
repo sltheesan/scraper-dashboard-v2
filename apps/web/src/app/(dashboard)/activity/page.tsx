@@ -87,7 +87,7 @@ export default function ActivityPage() {
 
   return (
     <div>
-      {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && <div className="error-msg mb-4">{error}</div>}
 
       <div className="activity-toolbar">
         <div className="tabs">
@@ -150,7 +150,7 @@ export default function ActivityPage() {
               <tbody>
                 {entries.map((e) => (
                   <tr key={e.id}>
-                    <td className="cell-muted" style={{ whiteSpace: 'nowrap' }}>{formatDate(e.createdAt)}</td>
+                    <td className="cell-muted whitespace-nowrap">{formatDate(e.createdAt)}</td>
                     <td>
                       <span className={`badge badge-actor-${e.actorType.toLowerCase()}`}>
                         {e.actorType}
@@ -159,7 +159,7 @@ export default function ActivityPage() {
                     <td>{e.actor?.name || e.actorId || '—'}</td>
                     <td className="cell-name">{e.action}</td>
                     <td>{e.target || '—'}</td>
-                    <td className="cell-muted" style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <td className="cell-muted max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap">
                       {e.details || '—'}
                     </td>
                   </tr>

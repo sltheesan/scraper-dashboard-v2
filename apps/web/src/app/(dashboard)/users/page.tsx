@@ -116,10 +116,10 @@ export default function UsersPage() {
 
   return (
     <div>
-      {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
+      {error && <div className="error-msg mb-4">{error}</div>}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <div style={{ color: 'var(--muted)', fontSize: 14 }}>{users.length} user(s)</div>
+      <div className="flex justify-between items-center mb-4">
+        <div className="text-muted text-sm">{users.length} user(s)</div>
         {hasPrivilege('users.create') && (
           <button className="btn btn-primary" onClick={() => setShowCreate(!showCreate)}>
             {showCreate ? 'Cancel' : '+ New User'}
@@ -128,9 +128,9 @@ export default function UsersPage() {
       </div>
 
       {showCreate && (
-        <form onSubmit={handleCreate} className="card" style={{ marginBottom: 20, padding: 20 }}>
-          <h3 style={{ margin: '0 0 16px', fontSize: 16 }}>Create User</h3>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        <form onSubmit={handleCreate} className="card mb-5 p-5">
+          <h3 className="mb-4 text-base font-semibold">Create User</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="form-label">Name</label>
               <input className="form-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
@@ -153,7 +153,7 @@ export default function UsersPage() {
               </select>
             </div>
           </div>
-          <div style={{ marginTop: 16 }}>
+          <div className="mt-4">
             <button className="btn btn-primary" type="submit">Create</button>
           </div>
         </form>
@@ -182,12 +182,12 @@ export default function UsersPage() {
                   <tr key={u.id}>
                     <td className="cell-name">
                       {u.name}
-                      {isSuper && <span className="badge badge-active" style={{ marginLeft: 8, fontSize: 10 }}>Super Admin</span>}
+                      {isSuper && <span className="badge badge-active ml-2 text-[10px]">Super Admin</span>}
                     </td>
                     <td>{u.email}</td>
                     <td>
                       {isSuper ? (
-                        <span style={{ color: 'var(--muted)', fontStyle: 'italic' }}>All privileges</span>
+                        <span className="text-muted italic">All privileges</span>
                       ) : (
                         <select
                           className="role-select"

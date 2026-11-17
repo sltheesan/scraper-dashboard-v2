@@ -87,7 +87,7 @@ function Sparkline({ values, color, height = 28 }: { values: number[]; color: st
   const line = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
   const area = line + ` L${pts[pts.length - 1].x},${H} L0,${H} Z`;
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height, display: 'block' }}>
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height }}>
       <path d={area} fill={color} opacity={0.08} />
       <path d={line} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
       <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r={2} fill={color} />
@@ -138,8 +138,6 @@ export default function DashboardHome() {
     Promise.all(promises).finally(() => setLoading(false));
   }, [hasPrivilege]);
 
-  // --- Computed ---
-
   const profileCounts = useMemo(() => {
     const total = profiles.length;
     const active = profiles.filter((p) => p.status === 'LOGGED_IN' || p.status === 'SCRAPING').length;
@@ -188,100 +186,92 @@ export default function DashboardHome() {
 
   if (profiles.length === 0 && !hasPrivilege('profiles.view')) {
     return (
-      <div className="empty-state" style={{ marginTop: 40 }}>
+      <div className="mt-10 text-center text-muted">
         <p>Welcome to Scraper Dashboard v2.</p>
       </div>
     );
   }
 
   return (
-    <div>
+    <div className="space-y-4">
       {/* ── Row 1: Today's financial KPIs ── */}
       {todayScrapes.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(155px, 1fr))', gap: 10, marginBottom: 16 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Net Flow hero */}
-          <div style={{
-            padding: '14px 18px', borderRadius: 'var(--radius-sm)',
-            background: todayTotals.net >= 0 ? 'rgba(52,211,153,0.06)' : 'rgba(239,68,68,0.06)',
-            border: `1px solid ${todayTotals.net >= 0 ? 'rgba(52,211,153,0.2)' : 'rgba(239,68,68,0.2)'}`,
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Today Net Flow</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: todayTotals.net >= 0 ? 'var(--success)' : 'var(--danger, var(--error))', marginTop: 2 }}>
+          <div className={`p-4 rounded-sm border ${
+            todayTotals.net >= 0
+              ? 'bg-[rgba(52,211,153,0.06)] border-[rgba(52,211,153,0.2)]'
+              : 'bg-[rgba(239,68,68,0.06)] border-[rgba(239,68,68,0.2)]'
+          }`}>
+            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Today Net Flow</div>
+            <div className={`text-2xl font-bold mt-0.5 ${todayTotals.net >= 0 ? 'text-success' : 'text-error'}`}>
               {todayTotals.net >= 0 ? '+' : ''}{fmtCompact(todayTotals.net, true)}
             </div>
             {weekDaily.length > 1 && (
-              <div style={{ marginTop: 6 }}>
+              <div className="mt-1.5">
                 <Sparkline values={weekDaily.map(([, d]) => d.dep - d.wd)} color={todayTotals.net >= 0 ? '#199e70' : '#e66767'} height={22} />
               </div>
             )}
           </div>
 
           {/* Deposits */}
-          <div style={{ padding: '14px 18px', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Deposits</div>
-            <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{fmtCompact(todayTotals.dep, true)}</div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{fmt(todayTotals.depCount)} txns</div>
+          <div className="p-4 rounded-sm bg-surface border border-border">
+            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Deposits</div>
+            <div className="text-xl font-bold mt-0.5">{fmtCompact(todayTotals.dep, true)}</div>
+            <div className="text-[11px] text-muted mt-0.5">{fmt(todayTotals.depCount)} txns</div>
             {weekDaily.length > 1 && (
-              <div style={{ marginTop: 4 }}><Sparkline values={weekDaily.map(([, d]) => d.dep)} color="#3987e5" height={20} /></div>
+              <div className="mt-1"><Sparkline values={weekDaily.map(([, d]) => d.dep)} color="#3987e5" height={20} /></div>
             )}
           </div>
 
           {/* Withdrawals */}
-          <div style={{ padding: '14px 18px', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Withdrawals</div>
-            <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{fmtCompact(todayTotals.wd, true)}</div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{fmt(todayTotals.wdCount)} txns</div>
+          <div className="p-4 rounded-sm bg-surface border border-border">
+            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Withdrawals</div>
+            <div className="text-xl font-bold mt-0.5">{fmtCompact(todayTotals.wd, true)}</div>
+            <div className="text-[11px] text-muted mt-0.5">{fmt(todayTotals.wdCount)} txns</div>
             {weekDaily.length > 1 && (
-              <div style={{ marginTop: 4 }}><Sparkline values={weekDaily.map(([, d]) => d.wd)} color="#d95926" height={20} /></div>
+              <div className="mt-1"><Sparkline values={weekDaily.map(([, d]) => d.wd)} color="#d95926" height={20} /></div>
             )}
           </div>
 
           {/* New Registrations */}
-          <div style={{ padding: '14px 18px', borderRadius: 'var(--radius-sm)', background: 'var(--surface)', border: '1px solid var(--border)' }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Registrations</div>
-            <div style={{ fontSize: 20, fontWeight: 700, marginTop: 2 }}>{fmt(todayTotals.newReg)}</div>
-            <div style={{ fontSize: 11, color: 'var(--muted)', marginTop: 1 }}>{fmt(todayTotals.newDep)} new deposits</div>
+          <div className="p-4 rounded-sm bg-surface border border-border">
+            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Registrations</div>
+            <div className="text-xl font-bold mt-0.5">{fmt(todayTotals.newReg)}</div>
+            <div className="text-[11px] text-muted mt-0.5">{fmt(todayTotals.newDep)} new deposits</div>
             {weekDaily.length > 1 && (
-              <div style={{ marginTop: 4 }}><Sparkline values={weekDaily.map(([, d]) => d.reg)} color="#199e70" height={20} /></div>
+              <div className="mt-1"><Sparkline values={weekDaily.map(([, d]) => d.reg)} color="#199e70" height={20} /></div>
             )}
           </div>
         </div>
       )}
 
       {/* ── Row 2: System health strip ── */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+      <div className="flex flex-col lg:flex-row gap-3">
         {/* Profile health */}
-        <div style={{ display: 'flex', gap: 10, flex: 1, minWidth: 0 }}>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-1 min-w-0">
           {[
-            { label: 'Profiles', value: profileCounts.total, color: 'var(--text)' },
-            { label: 'Active', value: profileCounts.active, color: 'var(--success)' },
-            { label: 'Idle', value: profileCounts.idle, color: 'var(--muted)' },
-            { label: 'Issues', value: profileCounts.issues, color: profileCounts.issues > 0 ? 'var(--error)' : 'var(--muted)' },
+            { label: 'Profiles', value: profileCounts.total, cls: '' },
+            { label: 'Active', value: profileCounts.active, cls: 'text-success' },
+            { label: 'Idle', value: profileCounts.idle, cls: 'text-muted' },
+            { label: 'Issues', value: profileCounts.issues, cls: profileCounts.issues > 0 ? 'text-error' : 'text-muted' },
           ].map((s) => (
-            <div key={s.label} style={{
-              flex: 1, padding: '10px 14px', borderRadius: 'var(--radius-sm)',
-              background: 'var(--surface)', border: '1px solid var(--border)',
-              minWidth: 80,
-            }}>
-              <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{s.label}</div>
-              <div style={{ fontSize: 22, fontWeight: 700, color: s.color, marginTop: 2 }}>{s.value}</div>
+            <div key={s.label} className="p-3 rounded-sm bg-surface border border-border min-w-0">
+              <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">{s.label}</div>
+              <div className={`text-[22px] font-bold mt-0.5 ${s.cls}`}>{s.value}</div>
             </div>
           ))}
         </div>
 
         {/* Platform breakdown */}
         {Object.keys(profileCounts.byKind).length > 0 && (
-          <div style={{
-            padding: '10px 14px', borderRadius: 'var(--radius-sm)',
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4, minWidth: 120,
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Platforms</div>
-            <div style={{ display: 'flex', gap: 8 }}>
+          <div className="p-3 rounded-sm bg-surface border border-border flex flex-col justify-center gap-1 min-w-[120px]">
+            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Platforms</div>
+            <div className="flex gap-2">
               {Object.entries(profileCounts.byKind).sort().map(([kind, count]) => (
-                <span key={kind} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span key={kind} className="flex items-center gap-1">
                   <span className={`badge badge-${kind.toLowerCase()}`}>{kind}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{count}</span>
+                  <span className="text-[13px] font-semibold">{count}</span>
                 </span>
               ))}
             </div>
@@ -290,33 +280,29 @@ export default function DashboardHome() {
 
         {/* Scheduler status */}
         {scheduler && (
-          <div style={{
-            padding: '10px 14px', borderRadius: 'var(--radius-sm)',
-            background: 'var(--surface)', border: '1px solid var(--border)',
-            minWidth: 180,
-          }}>
-            <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 4 }}>Scheduler</div>
-            <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
+          <div className="p-3 rounded-sm bg-surface border border-border min-w-[180px]">
+            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide mb-1">Scheduler</div>
+            <div className="flex gap-3 text-xs">
               <div>
-                <span style={{ color: scheduler.settings.fetch.enabled ? 'var(--success)' : 'var(--error)', fontWeight: 600 }}>
+                <span className={`font-semibold ${scheduler.settings.fetch.enabled ? 'text-success' : 'text-error'}`}>
                   {scheduler.settings.fetch.enabled ? 'ON' : 'OFF'}
                 </span>
-                <span style={{ color: 'var(--muted)', marginLeft: 4 }}>Fetch</span>
+                <span className="text-muted ml-1">Fetch</span>
                 {scheduler.settings.fetch.enabled && (
-                  <span style={{ color: 'var(--muted)', marginLeft: 4, fontSize: 11 }}>({msToReadable(scheduler.settings.fetch.intervalMs)})</span>
+                  <span className="text-muted ml-1 text-[11px]">({msToReadable(scheduler.settings.fetch.intervalMs)})</span>
                 )}
               </div>
               <div>
-                <span style={{ color: scheduler.settings.refresh.enabled ? 'var(--success)' : 'var(--muted)', fontWeight: 600 }}>
+                <span className={`font-semibold ${scheduler.settings.refresh.enabled ? 'text-success' : 'text-muted'}`}>
                   {scheduler.settings.refresh.enabled ? 'ON' : 'OFF'}
                 </span>
-                <span style={{ color: 'var(--muted)', marginLeft: 4 }}>Refresh</span>
+                <span className="text-muted ml-1">Refresh</span>
               </div>
             </div>
             {scheduler.runtime.runningCount > 0 && (
-              <div style={{ marginTop: 4, fontSize: 11 }}>
-                <span className="status-dot status-scraping" style={{ marginRight: 4 }} />
-                <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{scheduler.runtime.runningCount} running</span>
+              <div className="mt-1 text-[11px]">
+                <span className="status-dot status-scraping mr-1" />
+                <span className="text-accent font-semibold">{scheduler.runtime.runningCount} running</span>
               </div>
             )}
           </div>
@@ -324,14 +310,14 @@ export default function DashboardHome() {
       </div>
 
       {/* ── Row 3: Profile table + Activity sidebar ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: activity.length > 0 ? '1fr 320px' : '1fr', gap: 16 }}>
+      <div className={`grid gap-4 ${activity.length > 0 ? 'grid-cols-1 lg:grid-cols-[1fr_320px]' : 'grid-cols-1'}`}>
         {/* Profile status table */}
         {profiles.length > 0 && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>Profile Status</h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-semibold">Profile Status</h3>
               {todayScrapes.length > 0 && (
-                <span style={{ fontSize: 11, color: 'var(--muted)' }}>
+                <span className="text-[11px] text-muted">
                   {todayTotals.profiles}/{profileCounts.total} scraped today
                 </span>
               )}
@@ -341,16 +327,16 @@ export default function DashboardHome() {
                 <thead>
                   <tr>
                     <th>Name</th>
-                    <th>Kind</th>
+                    <th className="hidden sm:table-cell">Kind</th>
                     <th>Status</th>
                     {todayScrapes.length > 0 && (
                       <>
-                        <th style={{ textAlign: 'right' }}>Dep Amt</th>
-                        <th style={{ textAlign: 'right' }}>WD Amt</th>
-                        <th style={{ textAlign: 'right' }}>Net</th>
+                        <th className="text-right hidden md:table-cell">Dep Amt</th>
+                        <th className="text-right hidden md:table-cell">WD Amt</th>
+                        <th className="text-right">Net</th>
                       </>
                     )}
-                    <th>Last Scrape</th>
+                    <th className="hidden lg:table-cell">Last Scrape</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -360,33 +346,31 @@ export default function DashboardHome() {
                     const net = dep - wd;
                     const isIssue = ISSUE_STATUSES.includes(p.status);
                     return (
-                      <tr key={p.id} style={isIssue ? { background: 'rgba(239,68,68,0.03)' } : undefined}>
+                      <tr key={p.id} className={isIssue ? 'bg-[rgba(239,68,68,0.03)]' : ''}>
                         <td className="cell-name">
                           <Link href={`/profiles/${p.id}`}>{p.name}</Link>
                         </td>
-                        <td><span className={`badge badge-${p.kind.toLowerCase()}`}>{p.kind}</span></td>
+                        <td className="hidden sm:table-cell"><span className={`badge badge-${p.kind.toLowerCase()}`}>{p.kind}</span></td>
                         <td>
                           <span className={`status-dot status-${p.status.toLowerCase()}`} />
-                          <span style={{ fontSize: 12 }}>{p.status.replace('_', ' ')}</span>
+                          <span className="text-xs">{p.status.replace('_', ' ')}</span>
                         </td>
                         {todayScrapes.length > 0 && (
                           <>
-                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 12 }}>
-                              {p.scrape ? fmtCompact(dep, true) : <span style={{ color: 'var(--muted)' }}>—</span>}
+                            <td className="text-right tabular-nums text-xs hidden md:table-cell">
+                              {p.scrape ? fmtCompact(dep, true) : <span className="text-muted">—</span>}
                             </td>
-                            <td style={{ textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 12 }}>
-                              {p.scrape ? fmtCompact(wd, true) : <span style={{ color: 'var(--muted)' }}>—</span>}
+                            <td className="text-right tabular-nums text-xs hidden md:table-cell">
+                              {p.scrape ? fmtCompact(wd, true) : <span className="text-muted">—</span>}
                             </td>
-                            <td style={{
-                              textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 12,
-                              fontWeight: p.scrape ? 600 : 400,
-                              color: p.scrape ? (net >= 0 ? 'var(--success)' : 'var(--error)') : 'var(--muted)',
-                            }}>
+                            <td className={`text-right tabular-nums text-xs ${p.scrape ? 'font-semibold' : ''} ${
+                              p.scrape ? (net >= 0 ? 'text-success' : 'text-error') : 'text-muted'
+                            }`}>
                               {p.scrape ? `${net >= 0 ? '+' : ''}${fmtCompact(net, true)}` : '—'}
                             </td>
                           </>
                         )}
-                        <td className="cell-muted" style={{ fontSize: 12, whiteSpace: 'nowrap' }}>{formatDate(p.lastScrapeAt)}</td>
+                        <td className="cell-muted text-xs whitespace-nowrap hidden lg:table-cell">{formatDate(p.lastScrapeAt)}</td>
                       </tr>
                     );
                   })}
@@ -399,7 +383,7 @@ export default function DashboardHome() {
         {profiles.length === 0 && (
           <section className="card">
             <h3>Welcome to Scraper Dashboard v2</h3>
-            <p style={{ color: 'var(--muted)', marginTop: 8 }}>
+            <p className="text-muted mt-2">
               No profiles yet. Go to <Link href="/profiles">Profiles</Link> to create one.
             </p>
           </section>
@@ -408,33 +392,26 @@ export default function DashboardHome() {
         {/* Activity feed */}
         {activity.length > 0 && (
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <h3 style={{ fontSize: 14, fontWeight: 600, margin: 0 }}>Recent Activity</h3>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-sm font-semibold">Recent Activity</h3>
               {hasPrivilege('activity.view') && (
-                <Link href="/activity" style={{ fontSize: 11, color: 'var(--accent)', textDecoration: 'none' }}>View all</Link>
+                <Link href="/activity" className="text-[11px] text-accent no-underline hover:underline">View all</Link>
               )}
             </div>
-            <div style={{
-              background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
-              overflow: 'hidden',
-            }}>
+            <div className="bg-surface border border-border rounded overflow-hidden">
               {activity.map((a, i) => (
-                <div key={a.id} style={{
-                  padding: '10px 14px',
-                  borderBottom: i < activity.length - 1 ? '1px solid var(--border)' : 'none',
-                  display: 'flex', flexDirection: 'column', gap: 2,
-                }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: 12, fontWeight: 600 }}>{a.action}</span>
-                    <span style={{ fontSize: 10, color: 'var(--muted)', whiteSpace: 'nowrap' }}>{timeAgo(a.createdAt)}</span>
+                <div key={a.id} className={`px-3.5 py-2.5 flex flex-col gap-0.5 ${i < activity.length - 1 ? 'border-b border-border' : ''}`}>
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold">{a.action}</span>
+                    <span className="text-[10px] text-muted whitespace-nowrap">{timeAgo(a.createdAt)}</span>
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--muted)', display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <span className={`badge badge-actor-${a.actorType.toLowerCase()}`} style={{ fontSize: 9, padding: '1px 5px' }}>{a.actorType}</span>
+                  <div className="text-[11px] text-muted flex gap-1.5 items-center">
+                    <span className={`badge badge-actor-${a.actorType.toLowerCase()} text-[9px] px-[5px] py-px`}>{a.actorType}</span>
                     {a.actor?.name && <span>{a.actor.name}</span>}
-                    {a.target && <span style={{ opacity: 0.7 }}>{a.target}</span>}
+                    {a.target && <span className="opacity-70">{a.target}</span>}
                   </div>
                   {a.details && (
-                    <div style={{ fontSize: 11, color: 'var(--muted)', opacity: 0.6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <div className="text-[11px] text-muted opacity-60 overflow-hidden text-ellipsis whitespace-nowrap">
                       {a.details}
                     </div>
                   )}
