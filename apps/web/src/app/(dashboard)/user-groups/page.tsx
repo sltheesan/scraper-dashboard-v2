@@ -320,25 +320,29 @@ export default function UserGroupsPage() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {Object.entries(categories).map(([key, cat]) => {
+              <div style={{ border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                {Object.entries(categories).map(([key, cat], idx) => {
                   const allChecked = cat.privileges.every((p) => form.privileges.includes(p));
                   const someChecked = cat.privileges.some((p) => form.privileges.includes(p));
-                  const checkedCount = cat.privileges.filter((p) => form.privileges.includes(p)).length;
                   return (
                     <div key={key} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 0,
+                      borderBottom: idx < Object.keys(categories).length - 1 ? '1px solid var(--border)' : 'none',
                       background: 'var(--bg)',
-                      borderRadius: 'var(--radius-sm)',
-                      padding: '10px 14px',
-                      marginBottom: 2,
                     }}>
                       <label
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 10,
+                          gap: 8,
                           cursor: 'pointer',
-                          marginBottom: someChecked || allChecked ? 8 : 0,
+                          padding: '8px 12px',
+                          width: 130,
+                          flexShrink: 0,
+                          borderRight: '1px solid var(--border)',
+                          background: allChecked ? 'rgba(79, 140, 255, 0.06)' : 'transparent',
                         }}
                         onClick={(e) => { e.preventDefault(); toggleCategory(cat); }}
                       >
@@ -347,42 +351,36 @@ export default function UserGroupsPage() {
                           checked={allChecked}
                           ref={(el) => { if (el) el.indeterminate = someChecked && !allChecked; }}
                           onChange={() => toggleCategory(cat)}
-                          style={{ accentColor: 'var(--accent)', width: 15, height: 15 }}
+                          style={{ accentColor: 'var(--accent)', width: 14, height: 14, flexShrink: 0 }}
                         />
-                        <span style={{ fontWeight: 600, fontSize: 13, color: 'var(--text)', flex: 1 }}>
+                        <span style={{ fontWeight: 600, fontSize: 12, color: 'var(--text)', whiteSpace: 'nowrap' }}>
                           {cat.label}
-                        </span>
-                        <span style={{
-                          fontSize: 11,
-                          fontWeight: 600,
-                          color: allChecked ? 'var(--success)' : checkedCount > 0 ? 'var(--accent)' : 'var(--muted)',
-                          opacity: allChecked ? 1 : 0.8,
-                        }}>
-                          {allChecked ? 'All' : `${checkedCount}/${cat.privileges.length}`}
                         </span>
                       </label>
                       <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
-                        gap: '2px 12px',
-                        paddingLeft: 25,
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '0 4px',
+                        padding: '4px 10px',
+                        flex: 1,
                       }}>
                         {cat.privileges.map((p) => (
                           <label key={p} style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 7,
+                            gap: 5,
                             cursor: 'pointer',
                             fontSize: 12,
                             color: form.privileges.includes(p) ? 'var(--text)' : 'var(--muted)',
-                            padding: '3px 0',
+                            padding: '4px 6px',
+                            borderRadius: 3,
                             transition: 'color 0.1s',
                           }}>
                             <input
                               type="checkbox"
                               checked={form.privileges.includes(p)}
                               onChange={() => togglePrivilege(p)}
-                              style={{ accentColor: 'var(--accent)', width: 14, height: 14 }}
+                              style={{ accentColor: 'var(--accent)', width: 13, height: 13 }}
                             />
                             {privilegeLabel(p)}
                           </label>
