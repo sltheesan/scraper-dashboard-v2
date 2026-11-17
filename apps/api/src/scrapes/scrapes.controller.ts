@@ -24,6 +24,7 @@ export class ScrapesController {
   ) {}
 
   @Get()
+  @Privileges('profiles.view')
   findAll(
     @Query('profileId') profileId?: string,
     @Query('from') from?: string,
@@ -44,6 +45,7 @@ export class ScrapesController {
   }
 
   @Get('profile/:profileId')
+  @Privileges('profiles.view')
   getByProfile(
     @Param('profileId') profileId: string,
     @Query('limit') limit?: string,
@@ -52,11 +54,13 @@ export class ScrapesController {
   }
 
   @Get('today/:profileId')
+  @Privileges('profiles.view')
   getToday(@Param('profileId') profileId: string) {
     return this.scrapes.getToday(profileId);
   }
 
   @Get('yesterday/:profileId')
+  @Privileges('profiles.view')
   getYesterday(@Param('profileId') profileId: string) {
     return this.scrapes.getYesterday(profileId);
   }

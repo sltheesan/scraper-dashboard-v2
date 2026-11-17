@@ -29,6 +29,7 @@ export default function UserGroupsPage() {
   const [error, setError] = useState('');
   const [editing, setEditing] = useState<GroupRecord | null>(null);
   const [form, setForm] = useState({ name: '', description: '', privileges: [] as string[] });
+  const [formOpen, setFormOpen] = useState(false);
 
   useEffect(() => {
     if (!hasPrivilege('groups.manage')) {
@@ -57,16 +58,19 @@ export default function UserGroupsPage() {
   function openCreate() {
     setEditing(null);
     setForm({ name: '', description: '', privileges: [] });
+    setFormOpen(true);
   }
 
   function openEdit(g: GroupRecord) {
     setEditing(g);
     setForm({ name: g.name, description: g.description, privileges: [...g.privileges] });
+    setFormOpen(true);
   }
 
   function closeForm() {
     setEditing(null);
     setForm({ name: '', description: '', privileges: [] });
+    setFormOpen(false);
   }
 
   function togglePrivilege(p: string) {
@@ -129,7 +133,7 @@ export default function UserGroupsPage() {
     }
   }
 
-  const isFormOpen = editing !== null || form.name !== '' || form.privileges.length > 0;
+  const isFormOpen = formOpen;
 
   if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
 

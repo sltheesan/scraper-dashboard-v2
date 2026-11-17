@@ -40,11 +40,13 @@ export class ProfilesController {
   setTelegramService(service: any) { this.telegramService = service; }
 
   @Get()
+  @Privileges('profiles.view')
   findAll() {
     return this.profiles.findAll();
   }
 
   @Get(':id')
+  @Privileges('profiles.view')
   findOne(@Param('id') id: string) {
     return this.profiles.findOne(id);
   }

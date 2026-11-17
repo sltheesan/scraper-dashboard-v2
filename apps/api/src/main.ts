@@ -23,7 +23,7 @@ async function bootstrap() {
 
   const allowedOrigins = process.env.CORS_ORIGIN
     ? process.env.CORS_ORIGIN.split(',').map((s) => s.trim())
-    : ['http://localhost:3000'];
+    : ['http://localhost:3001', 'http://localhost:3000'];
   app.enableCors({ origin: allowedOrigins, credentials: true });
 
   const config = new DocumentBuilder()

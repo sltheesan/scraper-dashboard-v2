@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/auth-context';
 
 interface LogEvent {
   id: string;
@@ -24,6 +26,8 @@ function formatTime(d: string) {
 }
 
 export default function LogsPage() {
+  const { hasPrivilege } = useAuth();
+  const router = useRouter();
   const [logs, setLogs] = useState<LogEvent[]>([]);
   const [autoScroll, setAutoScroll] = useState(true);
   const [connected, setConnected] = useState(false);
@@ -31,6 +35,10 @@ export default function LogsPage() {
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
+    if (!hasPrivilege('logs.view')) {
+      router.replace('/');
+      return;
+    }
     api.get<LogEvent[]>('/logs/recent')
       .then((data) => setLogs(data))
       .catch(() => {});
@@ -50,7 +58,7 @@ export default function LogsPage() {
     es.onerror = () => setConnected(false);
 
     return () => { es.close(); };
-  }, []);
+  }, [hasPrivilege, router]);
 
   useEffect(() => {
     if (autoScroll && containerRef.current) {

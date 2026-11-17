@@ -217,7 +217,7 @@ export default function ProfilesPage() {
     setBusyActions((prev) => ({ ...prev, [profile.id]: 'login' }));
     try {
       const [result, cred] = await Promise.all([
-        api.post<{ ok: boolean; alreadyOpen: boolean }>(`/profiles/${profile.id}/login`),
+        api.post<{ ok: boolean; alreadyOpen: boolean }>(`/profiles/${profile.id}/login`, {}),
         api.get<{ username: string; password: string; pin: string; otpEmail: string }>(
           `/profiles/${profile.id}/credentials`,
         ).catch(() => null),
@@ -246,7 +246,7 @@ export default function ProfilesPage() {
     if (!loginSession) return;
     setLoginBusy(true);
     try {
-      await api.post(`/profiles/${loginSession.id}/login/finish`);
+      await api.post(`/profiles/${loginSession.id}/login/finish`, {});
       setLoginSession(null);
       await loadProfiles();
     } catch (err: any) {
@@ -260,7 +260,7 @@ export default function ProfilesPage() {
     if (!loginSession) return;
     setLoginBusy(true);
     try {
-      await api.post(`/profiles/${loginSession.id}/login/cancel`);
+      await api.post(`/profiles/${loginSession.id}/login/cancel`, {});
     } catch {}
     setLoginSession(null);
     setLoginBusy(false);
@@ -272,7 +272,7 @@ export default function ProfilesPage() {
     setOtpError('');
     setOtpResult(null);
     try {
-      const res = await api.post<{ result: any }>(`/profiles/${loginSession.id}/credentials/otp`);
+      const res = await api.post<{ result: any }>(`/profiles/${loginSession.id}/credentials/otp`, {});
       if (res.result) {
         setOtpResult(res.result);
       } else {

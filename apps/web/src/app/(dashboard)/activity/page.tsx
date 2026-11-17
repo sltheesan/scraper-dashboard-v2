@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { useAuth } from '@/contexts/auth-context';
 
 interface ActivityEntry {
   id: string;
@@ -29,6 +31,8 @@ function formatDate(d: string) {
 }
 
 export default function ActivityPage() {
+  const { hasPrivilege } = useAuth();
+  const router = useRouter();
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -40,11 +44,15 @@ export default function ActivityPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const limit = 50;
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
+    if (!hasPrivilege('activity.view')) {
+      router.replace('/');
+      return;
+    }
     api.get<string[]>('/activity/actions').then(setActions).catch(() => {});
-  }, []);
+  }, [hasPrivilege, router]);
 
   async function loadActivity(p: number, actorType: string, action: string, q: string) {
     setLoading(true);

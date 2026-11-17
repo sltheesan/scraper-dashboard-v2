@@ -24,9 +24,9 @@ interface Profile {
 }
 
 interface Credential {
-  usernameEncrypted: string;
-  passwordEncrypted: string;
-  pinEncrypted: string;
+  username: string;
+  password: string;
+  pin: string;
   otpEmail: string;
 }
 
@@ -140,7 +140,7 @@ export default function ProfileDetailPage() {
     e.preventDefault();
     setError('');
     try {
-      await api.post(`/profiles/${id}/credentials`, credForm);
+      await api.put(`/profiles/${id}/credentials`, credForm);
       const c = await api.get<Credential>(`/profiles/${id}/credentials`).catch(() => null);
       setCredential(c);
       setEditingCred(false);
@@ -322,9 +322,9 @@ export default function ProfileDetailPage() {
               {credential && !editingCred && (
                 <button className="btn btn-sm btn-ghost" onClick={() => {
                   setCredForm({
-                    username: credential.usernameEncrypted || '',
-                    password: credential.passwordEncrypted || '',
-                    pin: credential.pinEncrypted || '',
+                    username: credential.username || '',
+                    password: credential.password || '',
+                    pin: credential.pin || '',
                     otpEmail: credential.otpEmail || '',
                   });
                   setEditingCred(true);
@@ -347,15 +347,15 @@ export default function ProfileDetailPage() {
               <div className="cred-list">
                 <div className="cred-row">
                   <span className="cred-label">Username</span>
-                  <span className="cred-value" onClick={() => toggleShow('username')}>{maskValue(credential.usernameEncrypted, 'username')}</span>
+                  <span className="cred-value" onClick={() => toggleShow('username')}>{maskValue(credential.username, 'username')}</span>
                 </div>
                 <div className="cred-row">
                   <span className="cred-label">Password</span>
-                  <span className="cred-value" onClick={() => toggleShow('password')}>{maskValue(credential.passwordEncrypted, 'password')}</span>
+                  <span className="cred-value" onClick={() => toggleShow('password')}>{maskValue(credential.password, 'password')}</span>
                 </div>
                 <div className="cred-row">
                   <span className="cred-label">PIN</span>
-                  <span className="cred-value" onClick={() => toggleShow('pin')}>{maskValue(credential.pinEncrypted, 'pin')}</span>
+                  <span className="cred-value" onClick={() => toggleShow('pin')}>{maskValue(credential.pin, 'pin')}</span>
                 </div>
                 <div className="cred-row">
                   <span className="cred-label">OTP Email</span>

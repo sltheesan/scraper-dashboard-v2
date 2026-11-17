@@ -33,6 +33,7 @@ export class SettingsController {
   setDailyCaptureService(service: any) { this.dailyCaptureService = service; }
 
   @Get('scheduler')
+  @Privileges('settings.view')
   async getScheduler() {
     const settings = await this.settings.getSchedulerSettings();
     const runtime = this.schedulerService?.getSnapshot?.() ?? null;
@@ -54,6 +55,7 @@ export class SettingsController {
   }
 
   @Get('scheduler/platforms')
+  @Privileges('settings.view')
   async getPlatforms() {
     const s = await this.settings.getSchedulerSettings();
     return s.platforms ?? {};
@@ -73,6 +75,7 @@ export class SettingsController {
   }
 
   @Get('telegram')
+  @Privileges('settings.view')
   async getTelegram() {
     const settings = await this.settings.getTelegramSettings();
     const bot = this.telegramService?.getBotInfo?.() ?? null;

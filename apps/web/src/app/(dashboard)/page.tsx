@@ -19,16 +19,20 @@ function formatDate(d: string | null) {
 }
 
 export default function DashboardHome() {
-  const { user } = useAuth();
+  const { user, hasPrivilege } = useAuth();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!hasPrivilege('profiles.view')) {
+      setLoading(false);
+      return;
+    }
     api.get<Profile[]>('/profiles')
       .then(setProfiles)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [hasPrivilege]);
 
   const total = profiles.length;
   const active = profiles.filter((p) => p.status === 'LOGGED_IN' || p.status === 'SCRAPING').length;
