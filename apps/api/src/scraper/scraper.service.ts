@@ -504,6 +504,9 @@ export class ScraperService implements OnModuleDestroy {
           allowFallback: period === 'today' && todayMissing === 'fallback',
         });
         return { loggedIn: true, parsed: parsed ?? undefined, url, title, frameCount, tables, fields, kind: 'CGAMING' };
+      } else if (profile.kind === 'ONEOPSPORTAL') {
+        // TODO: implement oneopsportal parser once scraping is defined
+        return { loggedIn: true, parsed: undefined, url, title, frameCount, tables, fields, kind: 'ONEOPSPORTAL' };
       } else {
         const parsed = parseZoomwlb(fields as Record<string, string | null>, targetDate);
         return { loggedIn: true, parsed: parsed ?? undefined, url, title, frameCount, tables, fields, kind: 'ZOOMWLB' };

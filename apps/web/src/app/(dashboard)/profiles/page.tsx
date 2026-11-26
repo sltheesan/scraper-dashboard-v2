@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/auth-context';
 interface Profile {
   id: string;
   name: string;
-  kind: 'CGAMING' | 'ZOOMWLB';
+  kind: 'CGAMING' | 'ZOOMWLB' | 'ONEOPSPORTAL';
   loginUrl: string;
   targetUrl: string;
   buttonSelector: string;
@@ -63,7 +63,7 @@ interface DataField {
 
 const EMPTY_FORM = {
   name: '',
-  kind: 'CGAMING' as 'CGAMING' | 'ZOOMWLB',
+  kind: 'CGAMING' as 'CGAMING' | 'ZOOMWLB' | 'ONEOPSPORTAL',
   loginUrl: '',
   targetUrl: '',
   buttonSelector: '',
@@ -75,6 +75,7 @@ const EMPTY_FORM = {
   credUsername: '',
   credPassword: '',
   credPin: '',
+  credTotpSecret: '',
 };
 
 const PAGE_SIZE = 20;
@@ -92,7 +93,7 @@ export default function ProfilesPage() {
   const [error, setError] = useState('');
 
   const [search, setSearch] = useState('');
-  const [kindFilter, setKindFilter] = useState<'' | 'CGAMING' | 'ZOOMWLB'>('');
+  const [kindFilter, setKindFilter] = useState<'' | 'CGAMING' | 'ZOOMWLB' | 'ONEOPSPORTAL'>('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
 
@@ -143,7 +144,7 @@ export default function ProfilesPage() {
   }
 
   async function openEdit(p: Profile) {
-    let cred = { username: '', password: '', pin: '', otpEmail: '' };
+    let cred = { username: '', password: '', pin: '', otpEmail: '', totpSecret: '' };
     try {
       cred = await api.get(`/profiles/${p.id}/credentials`);
     } catch {}
@@ -161,6 +162,7 @@ export default function ProfilesPage() {
       credUsername: cred.username || '',
       credPassword: cred.password || '',
       credPin: cred.pin || '',
+      credTotpSecret: cred.totpSecret || '',
     });
     setEditingId(p.id);
     setShowForm(true);
@@ -171,7 +173,7 @@ export default function ProfilesPage() {
     e.preventDefault();
     setError('');
     try {
-      const { otpEmail, credUsername, credPassword, credPin, ...profileData } = form;
+      const { otpEmail, credUsername, credPassword, credPin, credTotpSecret, ...profileData } = form;
       let profileId = editingId;
       if (editingId) {
         await api.patch(`/profiles/${editingId}`, profileData);
@@ -179,12 +181,13 @@ export default function ProfilesPage() {
         const created = await api.post<Profile>('/profiles', profileData);
         profileId = created.id;
       }
-      if (profileId && (credUsername || credPassword || credPin || otpEmail)) {
+      if (profileId && (credUsername || credPassword || credPin || otpEmail || credTotpSecret)) {
         await api.put(`/profiles/${profileId}/credentials`, {
           username: credUsername,
           password: credPassword,
           pin: credPin,
           otpEmail,
+          totpSecret: credTotpSecret,
         });
       }
       setShowForm(false);
@@ -198,12 +201,15 @@ export default function ProfilesPage() {
   const [busyActions, setBusyActions] = useState<Record<string, string>>({});
   const [loginSession, setLoginSession] = useState<{
     id: string; name: string; alreadyOpen: boolean;
-    cred?: { username: string; password: string; pin: string; otpEmail: string };
+    cred?: { username: string; password: string; pin: string; otpEmail: string; totpSecret: string };
   } | null>(null);
   const [loginBusy, setLoginBusy] = useState(false);
   const [otpResult, setOtpResult] = useState<{ otp: string | null; subject?: string; from?: string; receivedAt?: string } | null>(null);
   const [otpBusy, setOtpBusy] = useState(false);
   const [otpError, setOtpError] = useState('');
+  const [totpResult, setTotpResult] = useState<{ code: string; remainingSeconds: number } | null>(null);
+  const [totpBusy, setTotpBusy] = useState(false);
+  const [totpError, setTotpError] = useState('');
   const [copied, setCopied] = useState('');
   const [fetchResult, setFetchResult] = useState<FetchResultData | null>(null);
 
@@ -224,6 +230,8 @@ export default function ProfilesPage() {
       ]);
       setOtpResult(null);
       setOtpError('');
+      setTotpResult(null);
+      setTotpError('');
       setCopied('');
       setLoginSession({
         id: profile.id,
@@ -282,6 +290,24 @@ export default function ProfilesPage() {
       setOtpError(err.message || 'Failed to fetch OTP');
     } finally {
       setOtpBusy(false);
+    }
+  }
+
+  async function handleGetTotp() {
+    if (!loginSession) return;
+    setTotpBusy(true);
+    setTotpError('');
+    setTotpResult(null);
+    try {
+      const res = await api.post<{ code: string; remainingSeconds: number }>(
+        `/profiles/${loginSession.id}/credentials/totp`,
+        {},
+      );
+      setTotpResult(res);
+    } catch (err: any) {
+      setTotpError(err.message || 'Failed to generate 2FA code');
+    } finally {
+      setTotpBusy(false);
     }
   }
 
@@ -345,6 +371,7 @@ export default function ProfilesPage() {
             <option value="">All kinds</option>
             <option value="CGAMING">CGaming</option>
             <option value="ZOOMWLB">ZoomWLB</option>
+            <option value="ONEOPSPORTAL">OneOpsPortal</option>
           </select>
           <select
             className="filter-select"
@@ -391,11 +418,12 @@ export default function ProfilesPage() {
                 <select
                   value={form.kind}
                   onChange={(e) =>
-                    setForm({ ...form, kind: e.target.value as 'CGAMING' | 'ZOOMWLB' })
+                    setForm({ ...form, kind: e.target.value as 'CGAMING' | 'ZOOMWLB' | 'ONEOPSPORTAL' })
                   }
                 >
                   <option value="CGAMING">CGaming</option>
                   <option value="ZOOMWLB">ZoomWLB</option>
+                  <option value="ONEOPSPORTAL">OneOpsPortal</option>
                 </select>
               </label>
 
@@ -498,6 +526,16 @@ export default function ProfilesPage() {
                       value={form.otpEmail}
                       onChange={(e) => setForm({ ...form, otpEmail: e.target.value })}
                       placeholder="e.g. autoceknawala@gmail.com"
+                    />
+                  </label>
+                  <label>
+                    <span>TOTP Secret (2FA)</span>
+                    <input
+                      type="password"
+                      value={form.credTotpSecret}
+                      onChange={(e) => setForm({ ...form, credTotpSecret: e.target.value })}
+                      placeholder="Base32 secret from QR code"
+                      autoComplete="off"
                     />
                   </label>
                 </div>
@@ -632,24 +670,50 @@ export default function ProfilesPage() {
             )}
 
             <div className="flex items-center gap-3 flex-wrap">
-              <button
-                className="btn btn-sm bg-warning text-white border-none"
-                disabled={otpBusy}
-                onClick={handleGetOtp}
-              >
-                {otpBusy ? 'Fetching...' : 'Get OTP'}
-              </button>
-              {otpResult?.otp && (
-                <span className="login-otp-code" onClick={() => copyToClipboard(otpResult.otp!, 'otp')}>
-                  {otpResult.otp}
-                  <span className="login-otp-copy">{copied === 'otp' ? 'Copied' : 'Click to copy'}</span>
-                </span>
+              {loginSession.cred?.totpSecret && (
+                <>
+                  <button
+                    className="btn btn-sm bg-accent text-white border-none"
+                    disabled={totpBusy}
+                    onClick={handleGetTotp}
+                  >
+                    {totpBusy ? 'Generating...' : 'Get 2FA Code'}
+                  </button>
+                  {totpResult && (
+                    <span className="login-otp-code" onClick={() => copyToClipboard(totpResult.code, 'totp')}>
+                      {totpResult.code}
+                      <span className="login-otp-copy">
+                        {copied === 'totp' ? 'Copied' : `${totpResult.remainingSeconds}s · Click to copy`}
+                      </span>
+                    </span>
+                  )}
+                  {totpError && (
+                    <span className="text-[13px] text-error">{totpError}</span>
+                  )}
+                </>
               )}
-              {otpError && (
-                <span className="text-[13px] text-error">{otpError}</span>
+              {loginSession.cred?.otpEmail && (
+                <>
+                  <button
+                    className="btn btn-sm bg-warning text-white border-none"
+                    disabled={otpBusy}
+                    onClick={handleGetOtp}
+                  >
+                    {otpBusy ? 'Fetching...' : 'Get OTP'}
+                  </button>
+                  {otpResult?.otp && (
+                    <span className="login-otp-code" onClick={() => copyToClipboard(otpResult.otp!, 'otp')}>
+                      {otpResult.otp}
+                      <span className="login-otp-copy">{copied === 'otp' ? 'Copied' : 'Click to copy'}</span>
+                    </span>
+                  )}
+                  {otpError && (
+                    <span className="text-[13px] text-error">{otpError}</span>
+                  )}
+                </>
               )}
             </div>
-            {otpResult && !otpResult.otp && (
+            {otpResult && !otpResult.otp && loginSession.cred?.otpEmail && (
               <p className="text-[13px] text-muted">
                 No OTP code found in recent emails.
               </p>

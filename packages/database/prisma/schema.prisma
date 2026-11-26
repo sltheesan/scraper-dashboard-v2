@@ -45,6 +45,7 @@ model User {
 enum ProfileKind {
   CGAMING
   ZOOMWLB
+  ONEOPSPORTAL
 }
 
 enum ProfileStatus {
@@ -86,8 +87,9 @@ model ProfileCredential {
   profile           Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
   usernameEncrypted String
   passwordEncrypted String
-  pinEncrypted      String   @default("")
-  otpEmail          String   @default("")
+  pinEncrypted          String   @default("")
+  otpEmail              String   @default("")
+  totpSecretEncrypted   String   @default("")
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

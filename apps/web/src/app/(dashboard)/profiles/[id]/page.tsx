@@ -28,6 +28,7 @@ interface Credential {
   password: string;
   pin: string;
   otpEmail: string;
+  totpSecret: string;
 }
 
 interface Scrape {
@@ -101,7 +102,7 @@ export default function ProfileDetailPage() {
 
   const [showCred, setShowCred] = useState<Record<string, boolean>>({});
   const [editingCred, setEditingCred] = useState(false);
-  const [credForm, setCredForm] = useState({ username: '', password: '', pin: '', otpEmail: '' });
+  const [credForm, setCredForm] = useState({ username: '', password: '', pin: '', otpEmail: '', totpSecret: '' });
 
   useEffect(() => {
     Promise.all([
@@ -326,6 +327,7 @@ export default function ProfileDetailPage() {
                     password: credential.password || '',
                     pin: credential.pin || '',
                     otpEmail: credential.otpEmail || '',
+                    totpSecret: credential.totpSecret || '',
                   });
                   setEditingCred(true);
                 }}>Edit</button>
@@ -338,6 +340,7 @@ export default function ProfileDetailPage() {
                 <label><span>Password</span><input value={credForm.password} onChange={(e) => setCredForm({ ...credForm, password: e.target.value })} /></label>
                 <label><span>PIN</span><input value={credForm.pin} onChange={(e) => setCredForm({ ...credForm, pin: e.target.value })} /></label>
                 <label><span>OTP Email</span><input value={credForm.otpEmail} onChange={(e) => setCredForm({ ...credForm, otpEmail: e.target.value })} /></label>
+                <label><span>TOTP Secret (2FA)</span><input type="password" value={credForm.totpSecret} onChange={(e) => setCredForm({ ...credForm, totpSecret: e.target.value })} autoComplete="off" /></label>
                 <div className="form-actions">
                   <button type="button" className="btn btn-ghost" onClick={() => setEditingCred(false)}>Cancel</button>
                   <button type="submit" className="btn btn-primary">Save</button>
@@ -360,6 +363,10 @@ export default function ProfileDetailPage() {
                 <div className="cred-row">
                   <span className="cred-label">OTP Email</span>
                   <span className="cred-value">{credential.otpEmail || '—'}</span>
+                </div>
+                <div className="cred-row">
+                  <span className="cred-label">TOTP Secret</span>
+                  <span className="cred-value" onClick={() => toggleShow('totpSecret')}>{maskValue(credential.totpSecret, 'totpSecret')}</span>
                 </div>
               </div>
             ) : (

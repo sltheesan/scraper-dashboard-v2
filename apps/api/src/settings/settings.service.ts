@@ -7,6 +7,7 @@ const SCHEDULER_DEFAULTS = {
   platforms: {
     cgaming: { dayCutover: '11:00', todayMissing: 'calm' as const },
     zoomwlb: { dayCutover: '11:00', todayMissing: 'calm' as const },
+    oneopsportal: { dayCutover: '11:00', todayMissing: 'calm' as const },
   },
 };
 

@@ -225,7 +225,7 @@ export default function SettingsPage() {
           <p className="text-muted text-xs mb-3">
             Business day boundary (ICT). Daily capture runs 15 min after.
           </p>
-          {['cgaming', 'zoomwlb'].map((kind) => {
+          {['cgaming', 'zoomwlb', 'oneopsportal'].map((kind) => {
             const cfg = scheduler.platforms?.[kind] || { dayCutover: '11:00', todayMissing: 'calm' };
             return (
               <div key={kind} className="mb-4">

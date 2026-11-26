@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+import * as OTPAuth from 'otpauth';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -36,14 +37,17 @@ export class CredentialsService {
 
   async setCredentials(
     profileId: string,
-    data: { username: string; password: string; pin?: string; otpEmail?: string },
+    data: { username: string; password: string; pin?: string; otpEmail?: string; totpSecret?: string },
   ) {
-    const encrypted = {
+    const encrypted: any = {
       usernameEncrypted: this.encrypt(data.username),
       passwordEncrypted: this.encrypt(data.password),
       pinEncrypted: this.encrypt(data.pin || ''),
       otpEmail: data.otpEmail || '',
     };
+    if (data.totpSecret !== undefined) {
+      encrypted.totpSecretEncrypted = this.encrypt(data.totpSecret || '');
+    }
 
     return this.prisma.profileCredential.upsert({
       where: { profileId },
@@ -64,7 +68,29 @@ export class CredentialsService {
       password: this.decrypt(cred.passwordEncrypted),
       pin: this.decrypt(cred.pinEncrypted),
       otpEmail: cred.otpEmail,
+      totpSecret: this.decrypt(cred.totpSecretEncrypted),
     };
+  }
+
+  async generateTotp(profileId: string): Promise<{ code: string; remainingSeconds: number }> {
+    const cred = await this.prisma.profileCredential.findUnique({
+      where: { profileId },
+    });
+    if (!cred) throw new NotFoundException('No credentials found for this profile');
+
+    const secret = this.decrypt(cred.totpSecretEncrypted);
+    if (!secret) throw new NotFoundException('No TOTP secret configured for this profile');
+
+    const totp = new OTPAuth.TOTP({
+      secret: OTPAuth.Secret.fromBase32(secret.replace(/\s+/g, '').toUpperCase()),
+      digits: 6,
+      period: 30,
+      algorithm: 'SHA1',
+    });
+
+    const code = totp.generate();
+    const remainingSeconds = totp.period - (Math.floor(Date.now() / 1000) % totp.period);
+    return { code, remainingSeconds };
   }
 
   async deleteCredentials(profileId: string) {

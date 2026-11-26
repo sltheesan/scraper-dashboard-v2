@@ -34,7 +34,7 @@ export class CredentialsController {
   @Privileges('credentials.edit')
   setCredentials(
     @Param('profileId') profileId: string,
-    @Body() body: { username: string; password: string; pin?: string; otpEmail?: string },
+    @Body() body: { username: string; password: string; pin?: string; otpEmail?: string; totpSecret?: string },
   ) {
     return this.credentials.setCredentials(profileId, body);
   }
@@ -43,6 +43,17 @@ export class CredentialsController {
   @Privileges('credentials.edit')
   deleteCredentials(@Param('profileId') profileId: string) {
     return this.credentials.deleteCredentials(profileId);
+  }
+
+  @Post('totp')
+  @Privileges('credentials.view')
+  async getTotp(@Param('profileId') profileId: string) {
+    try {
+      const result = await this.credentials.generateTotp(profileId);
+      return { configured: true, ...result };
+    } catch (err: any) {
+      throw new BadRequestException(err.message || 'Failed to generate TOTP code');
+    }
   }
 
   @Post('otp')

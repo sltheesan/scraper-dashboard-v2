@@ -8,7 +8,7 @@ import { msUntilCutover } from '../common/business-day';
 const CAPTURE_OFFSET_MIN = 15;
 const GAP_MS = 1500;
 const STARTUP_DELAY_MS = 15_000;
-const KINDS = ['CGAMING', 'ZOOMWLB'] as const;
+const KINDS = ['CGAMING', 'ZOOMWLB', 'ONEOPSPORTAL'] as const;
 
 @Injectable()
 export class DailyCaptureService implements OnModuleInit, OnModuleDestroy {
