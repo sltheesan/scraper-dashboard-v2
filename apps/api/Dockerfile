@@ -30,6 +30,8 @@ COPY --from=builder /app/apps/api/package.json ./apps/api/
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/packages/database ./packages/database
 
+RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
+
 RUN mkdir -p /app/apps/api/profiles
 
 COPY apps/api/start.sh ./apps/api/start.sh
