@@ -20,6 +20,7 @@ import { TelegramModule } from './telegram/telegram.module';
 import { BackupModule } from './backup/backup.module';
 import { VncModule } from './vnc/vnc.module';
 import { AppBootstrapService } from './app-bootstrap.service';
+import { HealthController } from './health.controller';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AppBootstrapService } from './app-bootstrap.service';
     BackupModule,
     VncModule,
   ],
+  controllers: [HealthController],
   providers: [AppBootstrapService],
 })
 export class AppModule {}

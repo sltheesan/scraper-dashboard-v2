@@ -15,8 +15,10 @@ async function bootstrap() {
     crossOriginEmbedderPolicy: false,
   }));
 
-  app.use(bodyParser.json({ limit: '100mb' }));
-  app.use(bodyParser.urlencoded({ extended: true, limit: '100mb' }));
+  app.use('/api/backup', bodyParser.json({ limit: '100mb' }));
+  app.use('/api/backup', bodyParser.urlencoded({ extended: true, limit: '100mb' }));
+  app.use(bodyParser.json({ limit: '2mb' }));
+  app.use(bodyParser.urlencoded({ extended: true, limit: '2mb' }));
 
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
@@ -26,12 +28,14 @@ async function bootstrap() {
     : ['http://localhost:3001', 'http://localhost:3000'];
   app.enableCors({ origin: allowedOrigins, credentials: true });
 
-  const config = new DocumentBuilder()
-    .setTitle('Scraper Dashboard API')
-    .setVersion('2.0')
-    .addBearerAuth()
-    .build();
-  SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config));
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Scraper Dashboard API')
+      .setVersion('2.0')
+      .addBearerAuth()
+      .build();
+    SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config));
+  }
 
   app.enableShutdownHooks();
 

@@ -1,0 +1,28 @@
+# Scraper Dashboard v2 — Caddy reverse proxy config
+# Place at /etc/caddy/Caddyfile on the VPS, then: systemctl reload caddy
+
+scraper-v2.200m.tech {
+	# Frontend (Next.js)
+	reverse_proxy localhost:3001
+
+	# VNC WebSocket proxy — requires upgrade for noVNC
+	handle /vnc/* {
+		reverse_proxy localhost:6090 {
+			header_up X-Forwarded-Proto {scheme}
+		}
+	}
+
+	# WebSocket upgrade support for VNC
+	@websocket {
+		header Connection *Upgrade*
+		header Upgrade websocket
+	}
+	handle @websocket {
+		reverse_proxy localhost:6090
+	}
+}
+
+# Keep v1 running alongside
+scraper.200m.tech {
+	reverse_proxy localhost:3000
+}
