@@ -1,5 +1,6 @@
 import { chromium, Browser } from 'playwright';
 import { COMMON_FIELDS, COMMON_LABELS, ParseResult } from '../scraper/parsers/common';
+import { convertedLabels, CurrencyInfo } from '../common/currency';
 
 let browserPromise: Promise<Browser> | null = null;
 
@@ -33,13 +34,23 @@ function cardHtml(
   profile: { name: string; kind: string },
   parsed: ParseResult,
   when: string,
+  cInfo?: CurrencyInfo,
 ): string {
   const tiles = COMMON_FIELDS.map((k) => {
+    const val = parsed.data?.[k];
     const valueColor = AMOUNT_FIELDS.has(k) ? '#82aaff' : '#e6e8eb';
+    let convLine = '';
+    if (AMOUNT_FIELDS.has(k) && val != null && cInfo) {
+      const labels = convertedLabels(val, cInfo.currency, cInfo.rates);
+      if (labels.length) {
+        convLine = `<div class="tile-conv">${labels.map(esc).join(' · ')}</div>`;
+      }
+    }
     return `
       <div class="tile">
         <div class="tile-label">${esc(COMMON_LABELS[k])}</div>
-        <div class="tile-value" style="color:${valueColor}">${fmtNum(parsed.data?.[k])}</div>
+        <div class="tile-value" style="color:${valueColor}">${fmtNum(val)}</div>
+        ${convLine}
       </div>`;
   }).join('');
 
@@ -79,6 +90,7 @@ function cardHtml(
       text-transform: uppercase; letter-spacing: 0.05em;
     }
     .tile-value { font-size: 26px; font-weight: 700; margin-top: 6px; }
+    .tile-conv { font-size: 13px; font-weight: 500; color: #6ce19a; margin-top: 2px; }
     .foot {
       display: flex; align-items: center; gap: 8px;
       margin-top: 22px; color: #8a929e; font-size: 13px;
@@ -103,12 +115,13 @@ export async function renderProfileCard(
   profile: { name: string; kind: string },
   parsed: ParseResult,
   when: string,
+  cInfo?: CurrencyInfo,
 ): Promise<Buffer | null> {
   let page;
   try {
     const browser = await getBrowser();
     page = await browser.newPage({ deviceScaleFactor: 2 });
-    await page.setContent(cardHtml(profile, parsed, when), { waitUntil: 'load' });
+    await page.setContent(cardHtml(profile, parsed, when, cInfo), { waitUntil: 'load' });
     const el = await page.$('#card');
     if (!el) return null;
     return (await el.screenshot({ type: 'png' })) as Buffer;

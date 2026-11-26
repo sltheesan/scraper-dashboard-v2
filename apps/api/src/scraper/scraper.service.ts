@@ -16,6 +16,7 @@ import {
 } from './parsers/common';
 import { parseCgaming, CgamingParseOptions } from './parsers/cgaming.parser';
 import { parseZoomwlb, zoomwlbFieldIds } from './parsers/zoomwlb.parser';
+import { parseOneopsportal, oneopsportalFieldDefs, oneopsportalWaitIds } from './parsers/oneopsportal.parser';
 
 interface ContextEntry {
   context: BrowserContext;
@@ -469,6 +470,15 @@ export class ScraperService implements OnModuleDestroy {
           }
         }
         if (waits.length) await Promise.race(waits);
+      } else if (profile.kind === 'ONEOPSPORTAL') {
+        const expectedIds = oneopsportalWaitIds();
+        const waits: Promise<any>[] = [];
+        for (const frame of page.frames()) {
+          for (const id of expectedIds) {
+            waits.push(frame.waitForSelector(`#${id}`, { timeout: 20000 }).catch(() => null));
+          }
+        }
+        if (waits.length) await Promise.race(waits);
       } else {
         await Promise.race([
           page.waitForSelector('table tbody tr', { timeout: 20000 }).catch(() => null),
@@ -479,11 +489,13 @@ export class ScraperService implements OnModuleDestroy {
       }
       await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
 
-      // For zoomwlb, use fixed common-schema IDs; for others, use per-profile dataFields
+      // For zoomwlb/oneopsportal, use fixed common-schema IDs; for others, use per-profile dataFields
       const fieldDefs =
         profile.kind === 'ZOOMWLB'
           ? Object.entries(zoomwlbIds!).map(([commonKey, id]) => ({ id, label: commonKey }))
-          : parsedDataFields;
+          : profile.kind === 'ONEOPSPORTAL'
+            ? oneopsportalFieldDefs()
+            : parsedDataFields;
 
       const [tables, fields, title] = await Promise.all([
         this.extractAllTables(page),
@@ -505,8 +517,8 @@ export class ScraperService implements OnModuleDestroy {
         });
         return { loggedIn: true, parsed: parsed ?? undefined, url, title, frameCount, tables, fields, kind: 'CGAMING' };
       } else if (profile.kind === 'ONEOPSPORTAL') {
-        // TODO: implement oneopsportal parser once scraping is defined
-        return { loggedIn: true, parsed: undefined, url, title, frameCount, tables, fields, kind: 'ONEOPSPORTAL' };
+        const parsed = parseOneopsportal(fields as Record<string, string | null>, targetDate);
+        return { loggedIn: true, parsed: parsed ?? undefined, url, title, frameCount, tables, fields, kind: 'ONEOPSPORTAL' };
       } else {
         const parsed = parseZoomwlb(fields as Record<string, string | null>, targetDate);
         return { loggedIn: true, parsed: parsed ?? undefined, url, title, frameCount, tables, fields, kind: 'ZOOMWLB' };

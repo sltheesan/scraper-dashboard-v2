@@ -5,6 +5,7 @@ import { LogsService } from '../logs/logs.service';
 import { COMMON_FIELDS, COMMON_LABELS } from '../scraper/parsers/common';
 import { formatICT, formatICTDate } from '../common/business-day';
 import { renderProfileCard, closeRenderer } from './image-render';
+import { currencyForPlatform, getExchangeRates, convertedLabels, CurrencyInfo } from '../common/currency';
 
 export interface TelegramSettings {
   restricted: boolean;
@@ -415,13 +416,23 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     profile: { name: string; kind: string },
     parsed: any,
     when: string,
+    cInfo?: CurrencyInfo,
   ): string {
     if (!parsed) {
       return `ℹ️ <b>${esc(profile.name)}</b>\nLogged in, but no data could be parsed from the page.`;
     }
-    const lines = COMMON_FIELDS.map(
-      (k) => `• ${COMMON_LABELS[k]}: <b>${fmtNum(parsed.data?.[k])}</b>`,
-    );
+    const AMOUNT_KEYS = new Set(['totalDepositAmount', 'totalWithdrawalAmount']);
+    const lines = COMMON_FIELDS.map((k) => {
+      const val = parsed.data?.[k];
+      let line = `• ${COMMON_LABELS[k]}: <b>${fmtNum(val)}</b>`;
+      if (AMOUNT_KEYS.has(k) && val != null && cInfo) {
+        const labels = convertedLabels(val, cInfo.currency, cInfo.rates);
+        if (labels.length) {
+          line += ` ${esc(cInfo.currency)} <i>(${labels.map(esc).join(' · ')})</i>`;
+        }
+      }
+      return line;
+    });
     const header = `📊 <b>${esc(profile.name)}</b> <i>(${esc(profile.kind)})</i>\n🕒 ${esc(when)}`;
     return `${header}\n\n${lines.join('\n')}`;
   }
@@ -622,11 +633,14 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
       if (parsed) {
         await this.loadSettings();
-        const text = this.formatResult(profile, parsed, when);
+        const currency = currencyForPlatform(profile.kind);
+        const rates = await getExchangeRates();
+        const cInfo: CurrencyInfo | undefined = rates ? { currency, rates } : undefined;
+        const text = this.formatResult(profile, parsed, when, cInfo);
 
         let png: Buffer | null = null;
         if (this.settings.sendImage) {
-          png = await renderProfileCard(profile, parsed, when);
+          png = await renderProfileCard(profile, parsed, when, cInfo);
         }
 
         if (png) {

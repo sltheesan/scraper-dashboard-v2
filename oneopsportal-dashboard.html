@@ -1,0 +1,669 @@
+<html lang="en" data-layout-mode="detached" data-topbar-color="dark" data-menu-color="dark" data-sidenav-user="true" data-theme="light" data-layout-position="fixed" data-sidenav-size="default" style=""><head>
+    <meta charset="utf-8">
+    <title>V3 - Backoffice</title>
+    <meta name="viewport" content="width=device-width, initial-scale=0.8">
+
+    <link rel="shortcut icon" href="assets/images/custom/v3_favico.svg">
+
+    <link rel="stylesheet" href="assets/vendor/daterangepicker/daterangepicker.css">
+    <link rel="stylesheet" href="assets/vendor/admin-resources/jquery.vectormap/jquery-jvectormap-1.2.2.css">
+    <link rel="stylesheet" href="assets/vendor/datatables.net-bs5/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="assets/vendor/datatables.net-responsive-bs5/css/responsive.bootstrap5.min.css">
+    <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="assets/vendor/jquery-toast-plugin/jquery.toast.min.css">
+    <link href="assets/css/app-modern.min.css" rel="stylesheet" type="text/css" id="app-style">
+    <link href="assets/css/custom.css" rel="stylesheet" type="text/css">
+    <style>
+        .has-fixed-height { height: 400px }
+        .dbv2-section { margin-bottom: 1.75rem; }
+        .dbv2-section-head { display: flex; align-items: baseline; gap: .75rem; border-bottom: 1px solid rgba(0,0,0,.08); padding-bottom: .4rem; margin-bottom: .9rem; }
+        .dbv2-section-head h5 { letter-spacing: .04em; font-size: .85rem; }
+        .dbv2-sub { display: flex; justify-content: space-between; gap: .5rem; font-size: .8rem; padding: .2rem 0; border-top: 1px dashed rgba(0,0,0,.08); }
+        .dbv2-sub-l { display: inline-flex; align-items: center; color: #6c757d; }
+        .dbv2-sub-r { font-weight: 700; white-space: nowrap; }
+        .dbv2-tip { line-height: 1; color: #8391a2; }
+        .dbv2-scope { font-size: .68rem; margin-left: .35rem; color: #8391a2; text-transform: none; }
+        .dbv2-scope::before { content: "\23F1 "; }
+        .tooltip-inner { max-width: 320px; text-align: left; }
+        .tilebox-one .dbv2-tip i, .tilebox-one .dbv2-breakdown i { position: static; font-size: 15px; opacity: 1; margin: 0; }
+        .dbv2-tip { display: inline-flex; align-items: center; border: 0; background: none; box-shadow: none; }
+        .dbv2-tip:hover i { color: #3e60d5; }
+        .dbv2-breakdown { display: inline-flex; align-items: center; gap: .25rem; }
+    </style>
+
+<style id="smmTopbarPendingStyle">.smm-topbar-link{position:relative;display:inline-block;margin-right:.5rem;padding:.4rem .5rem;line-height:1;color:#fff;cursor:pointer;text-decoration:none;border-radius:.375rem;transition:background-color .15s ease}.smm-topbar-link:hover,.smm-topbar-link[aria-expanded="true"]{background-color:rgba(255,255,255,.12)}.smm-topbar-link>i{font-size:1.5rem;vertical-align:middle}.smm-topbar-badge{position:absolute;top:-1px;right:-4px;min-width:18px;height:18px;padding:0 5px;font-size:.68rem;font-weight:700;line-height:18px;text-align:center;border-radius:18px;background-color:#f1556c;color:#fff;box-shadow:0 0 0 2px #3a4553}.smm-topbar-badge.is-zero{background-color:#6c757d;box-shadow:0 0 0 2px #3a4553;opacity:.6}.smm-topbar-menu{min-width:230px;padding:.35rem 0;border:0;border-radius:.4rem;box-shadow:0 .3rem .9rem rgba(0,0,0,.18)}.smm-topbar-menu .dropdown-item{padding:.45rem 1rem;font-size:.8rem}.smm-topbar-menu .dropdown-item .badge{min-width:22px;padding:.25em .45em;font-size:.7rem;border-radius:19px;background-color:#f1556c}.smm-topbar-menu .smm-topbar-empty{padding:.5rem 1rem;font-size:.8rem;color:#98a6ad}</style></head>
+
+<body style="">
+
+    <div id="preloader" smmloading="" dd="0" style="display: none;">
+        <div id="status" style="display: none;">
+            <div class="bouncing-loader">
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="text-center fw-bold font-12 text-white" smmloadingtext=""></div>
+        </div>
+    </div>
+
+    <div class="wrapper">
+
+        <div class="navbar-custom" id="__FPSC_ID_1_1795673276680" style="">
+            <div class="topbar container-fluid">
+                <div class="d-flex align-items-center gap-lg-2 gap-1">
+
+                    <div class="logo-topbar">
+                        <a href="#" class="logo-light">
+                            <span class="logo-lg">
+                                <img src="assets/images/custom/v3_logo_white_header.png">
+                            </span>
+                            <span class="logo-sm">
+                                <img src="assets/images/custom/v3_favico.svg">
+                            </span>
+                        </a>
+
+                        <a href="#" class="logo-dark">
+                            <span class="logo-lg">
+                                <img src="assets/images/custom/v3_logo_black_header.png">
+                            </span>
+                            <span class="logo-sm">
+                                <img src="assets/images/custom/v3_favico.svg">
+                            </span>
+                        </a>
+                    </div>
+
+                    <button class="button-toggle-menu">
+                        <i class="mdi mdi-menu"></i>
+                    </button>
+
+                    <button class="navbar-toggle" data-bs-toggle="collapse" data-bs-target="#topnav-menu-content">
+                        <div class="lines">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </button>
+
+                    <div class="d-flex me-5">
+                        <div class="dropdown d-inline-block"><a class="btn btn-link smm-topbar-link" title="Pending Deposit" style="color: white; font-size: 2rem;" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="mdi mdi-piggy-bank-outline"></i>
+                            <span class="badge bg-danger text-white smm-topbar-badge"><span smmtopbardp="">7</span></span>
+                        </a><div class="dropdown-menu dropdown-menu-end smm-topbar-menu" smmtopbardpmenu=""><a class="dropdown-item d-flex justify-content-between align-items-center" href="#" smmtopbarentity="" data-entity-id="366" data-link="transaction.html?deposit=1"><span>CM8</span><span class="badge text-white ms-3">7</span></a></div></div>
+                        <div class="dropdown d-inline-block"><a class="btn btn-link smm-topbar-link" title="Pending Withdraw" style="color: white; font-size: 2rem;" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="mdi mdi-cash-minus"></i>
+                            <span class="badge bg-danger text-white smm-topbar-badge"><span smmtopbarwd="">6</span></span>
+                        </a><div class="dropdown-menu dropdown-menu-end smm-topbar-menu" smmtopbarwdmenu=""><a class="dropdown-item d-flex justify-content-between align-items-center" href="#" smmtopbarentity="" data-entity-id="366" data-link="transaction.html?withdraw=1"><span>CM8</span><span class="badge text-white ms-3">6</span></a></div></div>
+                        <div class="dropdown d-inline-block"><a href="/memberGroup.html" class="btn btn-link smm-topbar-link" title="Member Group route alert" style="color: white; font-size: 2rem;">
+                            <i class="mdi mdi-alert-circle-outline"></i>
+                            <span class="badge bg-danger text-white smm-topbar-badge is-zero"><span smmtopbarroute="">0</span></span>
+                        </a><div class="dropdown-menu dropdown-menu-end smm-topbar-menu" smmtopbarroutemenu=""><div class="smm-topbar-empty">All groups have a route</div></div></div>
+                    </div>
+                </div>
+
+
+                <ul class="topbar-menu d-flex align-items-center gap-3">
+
+                    <li class="dropdown" smmlang="">
+                        <a class="nav-link dropdown-toggle arrow-none" smmlangcurr="" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+		<img src="assets/images/flags/en.jpg" class="me-0 me-sm-1" height="12">
+        <span class="align-middle d-none d-lg-inline-block">English</span>
+        <i class="mdi mdi-chevron-down d-none d-sm-inline-block align-middle"></i>
+	</a>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-animated" smmlanglist="">
+			<a href="javascript:void(0);" class="dropdown-item" smmlangselect="" lang="zh">
+                <img src="assets/images/flags/zh.jpg" class="me-1" height="12"> <span class="align-middle">中文</span>
+            </a>
+		
+			<a href="javascript:void(0);" class="dropdown-item" smmlangselect="" lang="th">
+                <img src="assets/images/flags/th.jpg" class="me-1" height="12"> <span class="align-middle">แบบไทย</span>
+            </a>
+		</div>
+                    </li>
+
+                    <li class="d-sm-inline-block">
+                        <div class="nav-link" id="light-dark-mode">
+                            <i class="ri-moon-line font-22"></i>
+                        </div>
+                    </li>
+
+
+                    <li class="d-none d-md-inline-block">
+                        <a class="nav-link" href="" data-toggle="fullscreen">
+                            <i class="ri-fullscreen-line font-22"></i>
+                        </a>
+                    </li>
+
+                    <li class="dropdown">
+                        <a class="nav-link dropdown-toggle arrow-none nav-user px-2" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
+                            <span class="account-user-avatar">
+                                <img src="assets/images/users/avatar.jpg" alt="user-image" width="32" class="rounded-circle">
+                            </span>
+                            <span class="d-lg-flex flex-column gap-1 d-none">
+                                <h5 class="my-0" smmusername="">cm8SA03</h5>
+                                <h6 class="my-0 fw-normal" smmuserposition="">Admin Role</h6>
+                            </span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-animated profile-dropdown">
+
+                            <div class=" dropdown-header noti-title">
+                                <h6 class="text-overflow m-0"><span data-ts="tt-welcome">Welcome</span> !</h6>
+                            </div>
+                            <a href="javascript:void(0);" class="dropdown-item" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                                <i class="mdi mdi-lock-outline me-1"></i>
+                                <span data-ts="tt-changePassword">Change Password</span>
+                            </a>
+                            <a href="javascript:void(0);" class="dropdown-item" onclick="smmLogout()">
+                                <i class="mdi mdi-logout me-1"></i>
+                                <span data-ts="tt-logout">Logout</span>
+                            </a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="leftside-menu" style="">
+
+            <a href="#" class="logo logo-light">
+                <span class="logo-lg"><img src="assets/images/custom/v3_logo_white_header.png"></span>
+                <span class="logo-sm"><img src="assets/images/custom/v3_favico.svg"></span>
+            </a>
+
+            <a href="#" class="logo logo-dark">
+                <span class="logo-lg"><img src="assets/images/custom/v3_logo_black_header.png" alt="dark logo"></span>
+                <span class="logo-sm"><img src="assets/images/custom/v3_favico.svg" alt="small logo"></span>
+            </a>
+
+            <div class="h-100" id="leftside-menu-container" data-simplebar="init"><div class="simplebar-wrapper" style="margin: 0px;"><div class="simplebar-height-auto-observer-wrapper"><div class="simplebar-height-auto-observer"></div></div><div class="simplebar-mask"><div class="simplebar-offset" style="right: 0px; bottom: 0px;"><div class="simplebar-content-wrapper" tabindex="0" role="region" aria-label="scrollable content" style="height: 100%; overflow: hidden;"><div class="simplebar-content" style="padding: 0px;">
+
+                <div class="leftbar-user">
+                    <a href="#">
+                        <div class="avatar-md d-inline-block">
+                            <span class="avatar-title bg-light text-dark font-36 rounded-circle"><i class="mdi mdi-wallet-outline"></i></span>
+                        </div>
+                        <span class="d-block mt-2 h6 text-secondary"><span data-ts="tt-creditBalance">Credit Balance</span><br><span data-ts="tt-lastUpdated">Last Updated</span></span>
+                        <div class="">
+                            <div class="input-group">
+                                <select class="form-control form-control-light smm-dashboard-filter-brand" smmbrandlistingselect="" id="topBrandSelectValue"><option value="366">CM8</option></select>
+                            </div>
+                        </div>
+                        <span class="d-block mt-0 h4 text-success"><span smmbrandcurrency=""></span> <span smmbrandbalance=""></span></span>
+                    </a>
+                </div>
+
+                <ul class="side-nav" smmsidemenu="">
+                        <li class="side-nav-item menuitem-active">
+                            <a href="dashboard.html" class="side-nav-link active">
+                                <i class="uil uil-home-alt"></i>
+                                <span>1. Dashboard</span>
+                            </a>
+                        </li>
+                    
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarplayer" aria-expanded="false" aria-controls="sidebarplayer" class="side-nav-link">
+                    <i class="uil uil-user"></i>
+                    <span> 2. Player </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarplayer">
+                    <ul class="side-nav-second-level" smmsidemenuplayer="">
+                         <li><a href="player-listing-v2.html"><span style="text-wrap: wrap;"> 2.1 Player Listing</span> </a></li></ul>
+                    </div>
+                    </li>
+                            
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebartransaction" aria-expanded="false" aria-controls="sidebartransaction" class="side-nav-link">
+                    <i class="uil uil-tachometer-fast"></i>
+                    <span> 3. Transaction </span><span class="badge bg-danger text-white"><span smmtotaltransaction="">13</span></span><span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebartransaction">
+                    <ul class="side-nav-second-level" smmsidemenutransaction="">
+                         <li><a href="transaction-history.html"><span style="text-wrap: wrap;"> 3.1 Transaction History</span> </a></li></ul>
+                    </div>
+                    </li>
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarcampaign" aria-expanded="false" aria-controls="sidebarcampaign" class="side-nav-link">
+                    <i class="mdi mdi-bullhorn-outline"></i>
+                    <span> 4. Campaign </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarcampaign">
+                    <ul class="side-nav-second-level" smmsidemenucampaign="">
+                         <li><a href="report-campaign-report.html"><span style="text-wrap: wrap;"> 4.1 Campaign Report</span> </a></li></ul>
+                    </div>
+                    </li>
+                            
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarbonus" aria-expanded="false" aria-controls="sidebarbonus" class="side-nav-link">
+                    <i class="uil uil-bookmark"></i>
+                    <span> 5. Bonus </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarbonus">
+                    <ul class="side-nav-second-level" smmsidemenubonus="">
+                         <li><a href="bonus-smmv2-bonus-list.html"><span style="text-wrap: wrap;"> 5.1 Player Bonus Grant List</span> </a></li>
+                         <li><a href="bonus-smmv2-grant-summary.html"><span style="text-wrap: wrap;"> 5.2 Bonus Grant List</span> </a></li>
+                         <li><a href="angpao-record.html"><span style="text-wrap: wrap;"> 5.3 Angpao Records</span> </a></li>
+                         <li><a href="angpao-report.html"><span style="text-wrap: wrap;"> 5.4 Angpao Report</span> </a></li></ul>
+                    </div>
+                    </li>
+                            
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarvip" aria-expanded="false" aria-controls="sidebarvip" class="side-nav-link">
+                    <i class="mdi mdi-crown-outline"></i>
+                    <span> 6. VIP </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarvip">
+                    <ul class="side-nav-second-level" smmsidemenuvip="">
+                         <li><a href="vip-overview.html"><span style="text-wrap: wrap;"> 6.1 VIP Overview</span> </a></li>
+                         <li><a href="vip-member.html"><span style="text-wrap: wrap;"> 6.2 VIP Members</span> </a></li>
+                         <li><a href="vip-reward.html"><span style="text-wrap: wrap;"> 6.3 VIP Rewards</span> </a></li>
+                         <li><a href="vip-tier-log.html"><span style="text-wrap: wrap;"> 6.4 VIP Tier Log</span> </a></li></ul>
+                    </div>
+                    </li>
+                            
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarreferral" aria-expanded="false" aria-controls="sidebarreferral" class="side-nav-link">
+                    <i class="mdi mdi-account-multiple"></i>
+                    <span> 7. Referral </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarreferral">
+                    <ul class="side-nav-second-level" smmsidemenureferral="">
+                         <li><a href="bonus-smmv2-referral.html"><span style="text-wrap: wrap;"> 7.1 Referral Report</span> </a></li></ul>
+                    </div>
+                    </li>
+                            
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarcrm" aria-expanded="false" aria-controls="sidebarcrm" class="side-nav-link">
+                    <i class="mdi mdi-account-group"></i>
+                    <span> 8. CRM </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarcrm">
+                    <ul class="side-nav-second-level" smmsidemenucrm="">
+                         <li><a href="report-crm.html"><span style="text-wrap: wrap;"> 8.1 CRM Report</span> </a></li>
+                         <li><a href="report-player-score.html"><span style="text-wrap: wrap;"> 8.2 Player Score Report</span> </a></li>
+                         <li><a href="report-player-preference-game.html"><span style="text-wrap: wrap;"> 8.3 Player Preference Game</span> </a></li></ul>
+                    </div>
+                    </li>
+                            
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarreport" aria-expanded="false" aria-controls="sidebarreport" class="side-nav-link">
+                    <i class="mdi mdi-chart-bar"></i>
+                    <span> 9. Report </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarreport">
+                    <ul class="side-nav-second-level" smmsidemenureport="">
+                         <li><a href="report-winlose-summ-product.html"><span style="text-wrap: wrap;"> 9.1 Winlose Summary By Product</span> </a></li>
+                         <li><a href="report-order-history.html"><span style="text-wrap: wrap;"> 9.2 Player Winlose Details</span> </a></li>
+                         <li><a href="report-winlose-summ-player.html"><span style="text-wrap: wrap;"> 9.3 Winlose Summary By Player</span> </a></li>
+                         <li><a href="report-winlose-summ-report.html"><span style="text-wrap: wrap;"> 9.4 Winlose Consolidate Report</span> </a></li>
+                         <li><a href="report-rebate.html"><span style="text-wrap: wrap;"> 9.5 Rebate Report</span> </a></li>
+                         <li><a href="report-cashback.html"><span style="text-wrap: wrap;"> 9.6 Cashback Report</span> </a></li>
+                         <li><a href="report-player-summary-detail.html"><span style="text-wrap: wrap;"> 9.7 Player Summary Detail</span> </a></li>
+                         <li><a href="report-player-summ-report.html"><span style="text-wrap: wrap;"> 9.8 Player Summary Report</span> </a></li>
+                         <li><a href="report-top-player-report.html"><span style="text-wrap: wrap;"> 9.9 Top Player Report</span> </a></li>
+                         <li><a href="report-transaction-summ-report.html"><span style="text-wrap: wrap;"> 9.10 Transaction Summary Report</span> </a></li>
+                         <li><a href="report-daily-transaction-report.html"><span style="text-wrap: wrap;"> 9.11 Daily Transaction Report</span> </a></li>
+                         <li><a href="report-agent-report.html"><span style="text-wrap: wrap;"> 9.12 Agent Report</span> </a></li>
+                         <li><a href="report-player-daily-winlose-summ.html"><span style="text-wrap: wrap;"> 9.13 Player Daily Winlose Summary</span> </a></li>
+                         <li><a href="report-member-info-log.html"><span style="text-wrap: wrap;"> 9.14 Modify Member Info Report</span> </a></li>
+                         <li><a href="report-member-request-log.html"><span style="text-wrap: wrap;"> 9.15 Member Action Log Report</span> </a></li>
+                         <li><a href="report-statement-report.html"><span style="text-wrap: wrap;"> 9.16 Statement Report</span> </a></li>
+                         <li><a href="report-running-bet-report.html"><span style="text-wrap: wrap;"> 9.17 Running Bet Report</span> </a></li>
+                         <li><a href="report-bonus-freespin-report.html"><span style="text-wrap: wrap;"> 9.18 Bonus Free Spin Activity Report</span> </a></li>
+                         <li><a href="report-first-reg-deposit-report.html"><span style="text-wrap: wrap;"> 9.19 First Reg Deposit Report</span> </a></li>
+                         <li><a href="report-livegame-player-wallet-log.html"><span style="text-wrap: wrap;"> 9.20 Livegame Player Wallet Report</span> </a></li>
+                         <li><a href="report-cancel-bonus-report.html"><span style="text-wrap: wrap;"> 9.21 Cancel Bonus Report</span> </a></li>
+                         <li><a href="report-otp-report.html"><span style="text-wrap: wrap;"> 9.22 OTP Report</span> </a></li>
+                         <li><a href="report-platform-error-report.html"><span style="text-wrap: wrap;"> 9.23 Platform Error Report</span> </a></li>
+                         <li><a href="report-hourly-performance.html"><span style="text-wrap: wrap;"> 9.24 Hourly Performance Report</span> </a></li></ul>
+                    </div>
+                    </li>
+                            
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarpage" aria-expanded="false" aria-controls="sidebarpage" class="side-nav-link">
+                    <i class="uil uil-file-alt"></i>
+                    <span> 10. Page </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarpage">
+                    <ul class="side-nav-second-level" smmsidemenupage="">
+                         <li><a href="page-cms-page-setting.html"><span style="text-wrap: wrap;"> 10.1 CMS Page Setting</span> </a></li>
+                         <li><a href="page-banner-setting.html"><span style="text-wrap: wrap;"> 10.2 Banner Setting</span> </a></li>
+                         <li><a href="page-running-text.html"><span style="text-wrap: wrap;"> 10.3 Running Text Setting</span> </a></li>
+                         <li><a href="page-popup-setting.html"><span style="text-wrap: wrap;"> 10.4 Pop Up Settings</span> </a></li>
+                         <li><a href="page-alternative-domain.html"><span style="text-wrap: wrap;"> 10.5 Domain</span> </a></li>
+                         <li><a href="page-marketing-domain.html"><span style="text-wrap: wrap;"> 10.6 Marketing Domain</span> </a></li>
+                         <li><a href="smmv2-inbox-setting.html"><span style="text-wrap: wrap;"> 10.7 Inbox Setting</span> </a></li>
+                         <li><a href="page-reward-setting.html"><span style="text-wrap: wrap;"> 10.8 Reward Setting</span> </a></li>
+                         <li><a href="page-game-notice-setting.html"><span style="text-wrap: wrap;"> 10.9 Game Notice Setting</span> </a></li></ul>
+                    </div>
+                    </li>
+                            
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebaradsignals" aria-expanded="false" aria-controls="sidebaradsignals" class="side-nav-link">
+                    <i class="mdi mdi-access-point"></i>
+                    <span> 11. Ad Signals </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebaradsignals">
+                    <ul class="side-nav-second-level" smmsidemenuadsignals="">
+                         <li><a href="ad-signals-overview.html"><span style="text-wrap: wrap;"> 11.1 Signal Overview</span> </a></li>
+                         <li><a href="ad-signals-log.html"><span style="text-wrap: wrap;"> 11.2 Signal Log</span> </a></li>
+                         <li><a href="ad-signals-player.html"><span style="text-wrap: wrap;"> 11.3 Player Signals</span> </a></li>
+                         <li><a href="ad-signals-setup.html"><span style="text-wrap: wrap;"> 11.4 Signal Setup</span> </a></li></ul>
+                    </div>
+                    </li>
+                            
+                    <li class="side-nav-item">
+                    <a data-bs-toggle="collapse" href="#sidebarandroidapp" aria-expanded="false" aria-controls="sidebarandroidapp" class="side-nav-link">
+                    <i class="mdi mdi-android"></i>
+                    <span> 12. Android App </span>
+                    <span class="menu-arrow"></span>
+                    </a>
+                    <div class="collapse" id="sidebarandroidapp">
+                    <ul class="side-nav-second-level" smmsidemenuandroidapp="">
+                         <li><a href="page-app-apk.html"><span style="text-wrap: wrap;"> 12.1 APP Setting</span> </a></li>
+                         <li><a href="push-message.html"><span style="text-wrap: wrap;"> 12.2 Push Notification</span> </a></li>
+                         <li><a href="push-rule.html"><span style="text-wrap: wrap;"> 12.3 Push Auto Rules</span> </a></li></ul>
+                    </div>
+                    </li>
+                            </ul>
+
+                <div class="clearfix"></div>
+            </div></div></div></div><div class="simplebar-placeholder" style="width: auto; height: 941px;"></div></div><div class="simplebar-track simplebar-horizontal" style="visibility: hidden;"><div class="simplebar-scrollbar" style="width: 0px; display: none; transform: translate3d(0px, 0px, 0px);"></div></div><div class="simplebar-track simplebar-vertical" style="visibility: hidden;"><div class="simplebar-scrollbar" style="height: 0px; display: none; transform: translate3d(0px, 0px, 0px);"></div></div></div>
+        </div>
+
+        <div class="content-page">
+            <div class="content">
+
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="page-title-box">
+                                <div class="page-title-right"></div>
+                                <h4 class="page-title" data-ts="tt-dbv2-pageTitle">Dashboard</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row align-items-center mb-2">
+                        <div class="col-md-6">
+                            <div class="row" id="smmFMfilter">
+                                <input type="hidden" name="selectId" value="366">
+                                <div class="col-8">
+                                    <div class="input-group ms-2">
+                                        <input id="startDate" name="startDate" type="text" class="form-control form-control-light dt-s2 " readonly="">
+                                        <span class="input-group-text bg-dark border-dark text-light"><i class="mdi mdi-calendar-range font-13"></i></span>
+                                    </div>
+                                </div>
+                                <div id="searchButton" class="col-2 d-none">
+                                    <button type="button" class="btn btn-primary ms-2" onclick="startFilter()" data-ts="tt-search">Search</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+<div class="dbv2-section"><div class="dbv2-section-head"><h5 class="mb-0 text-uppercase" data-ts="tt-dbv2-secPlayers">Players</h5><span class="text-muted font-12" data-ts="tt-dbv2-secPlayersNote">Selected dates</span></div><div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3"><div class="col"><div class="card tilebox-one bg-primary bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-activeTitle">Peak Daily Active Players</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="The &lt;b&gt;highest number of players who logged in on a single day&lt;/b&gt; within the selected dates.&lt;br&gt;It is &lt;b&gt;not&lt;/b&gt; the number of different players over the whole period."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="activeMember">1,791</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-depositingPlayers">Depositing Players</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Different players with at least one &lt;b&gt;approved deposit&lt;/b&gt; in the selected dates. Each player counted once."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="depositMember">537</span></div><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-playersWhoBet">Players Who Bet</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Different players who &lt;b&gt;placed at least one bet&lt;/b&gt; in the selected dates. Each player counted once."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="playGameMember">662</span></div></div></div></div><div class="col"><div class="card tilebox-one bg-primary bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-newRegTitle">New Registrations</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="New player accounts &lt;b&gt;registered&lt;/b&gt; in the selected dates."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="newRegister">630</h3></div></div></div><div class="col"><div class="card tilebox-one bg-primary bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-ftdTitle">First-Time Depositors (FTD)</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Players whose &lt;b&gt;first-ever approved deposit&lt;/b&gt; (in the player's whole history) happened in the selected dates."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="FTDCount">390</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-ftdAmount">FTD Amount</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Total of those players' first-ever deposits."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="FTDAmount">48,091.00</span></div></div></div></div><div class="col"><div class="card tilebox-one bg-primary bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-sameDayTitle">Registered &amp; Deposited Same Day</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Players who &lt;b&gt;registered and made an approved deposit on the same day&lt;/b&gt;, within the selected dates."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="sameDayRegisterAndDepositCount">357</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-sameDayAmount">Their Deposit Amount</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="What those players deposited on their registration day."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="sameDayRegisterAndDeposit">44,411.00</span></div></div></div></div></div></div><div class="dbv2-section"><div class="dbv2-section-head"><h5 class="mb-0 text-uppercase" data-ts="tt-dbv2-secCash">Player Deposits &amp; Withdrawals</h5><span class="text-muted font-12" data-ts="tt-dbv2-secCashNote">Selected dates · money moved by players themselves</span></div><div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3"><div class="col"><div class="card tilebox-one bg-info bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-depOrdersTitle">Player Deposit Orders</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Number of &lt;b&gt;deposit orders submitted by players&lt;/b&gt; and approved, by approval date.&lt;br&gt;Manual adjustments by operators are &lt;b&gt;not&lt;/b&gt; included."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="depositCount">788</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-depOrdersPlayers">Depositing Players</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Different players with at least one approved deposit in the selected dates."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="FTDCount2">537</span></div></div></div></div><div class="col"><div class="card tilebox-one bg-info bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-depAmountTitle">Player Deposit Amount</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Total of &lt;b&gt;approved deposit orders submitted by players themselves&lt;/b&gt; (payment gateway / bank deposit), by approval date.&lt;br&gt;&lt;br&gt;This is &lt;b&gt;not all money in&lt;/b&gt;: manual adjustments are excluded. For deposits + manual adjustments, see &lt;b&gt;Total Cash In&lt;/b&gt;."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="totalDeposit">98,575.00</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-firstDepInPeriod">Each Player's First Deposit in Period</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="For every player who deposited in the selected dates, the amount of their &lt;b&gt;first deposit within these dates&lt;/b&gt;, added up.&lt;br&gt;&lt;i&gt;Not the same as FTD Amount (first-ever deposit).&lt;/i&gt;"><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="FTDAmount2">65,031.00</span></div></div></div></div><div class="col"><div class="card tilebox-one bg-warning bg-opacity-25 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-cashInTitle">Total Cash In</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="&lt;b&gt;Total Cash In = Player Deposit Amount + Manual Adjustment (net)&lt;/b&gt;&lt;br&gt;&lt;br&gt;All money credited to players by deposit or by operator adjustment (every category, added minus deducted).&lt;br&gt;System game-cancel refunds are &lt;b&gt;not&lt;/b&gt; included."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="dbv2CashIn">98,575.00</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-cashInDeposit">Player Deposit Amount</span></span><span class="dbv2-sub-r" id="dbv2CashInDeposit">98,575.00</span></div><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-cashInAdj">Manual Adjustment (net)</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Operator adjustments in all categories, added minus deducted. See Adjustment &amp;rarr; Breakdown."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="dbv2CashInAdj"><span class="">0.00</span></span></div></div></div></div><div class="col"><div class="card tilebox-one bg-info bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-wdOrdersTitle">Player Withdrawal Orders</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Number of &lt;b&gt;withdrawal orders submitted by players&lt;/b&gt; in the selected dates.&lt;br&gt;Manual deductions by operators are &lt;b&gt;not&lt;/b&gt; included."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="withdrawalCount">123</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-wdPlayers">Withdrawing Players (per day, summed)</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Players who withdrew, counted &lt;b&gt;once per day&lt;/b&gt; and added up across days &amp;mdash; a player who withdraws on 3 different days counts 3 times."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="firstWithdrawalCount">101</span></div></div></div></div><div class="col"><div class="card tilebox-one bg-info bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-wdAmountTitle">Player Withdrawal Amount</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Total of &lt;b&gt;withdrawals made by players&lt;/b&gt; in the selected dates.&lt;br&gt;Manual deductions by operators are &lt;b&gt;not&lt;/b&gt; included."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="totalWithdraw">82,800.00</h3></div></div></div><div class="col"><div class="card tilebox-one bg-info bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-netDepTitle">Net Player Deposit</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="&lt;b&gt;Player Deposit Amount &amp;minus; Player Withdrawal Amount&lt;/b&gt;.&lt;br&gt;&lt;br&gt;This is net cash flow from players, &lt;b&gt;not revenue&lt;/b&gt;. For game revenue, see &lt;b&gt;Company GGR&lt;/b&gt; under Player Win/Loss."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="revenue">15,775.00</h3></div></div></div></div></div><div class="dbv2-section"><div class="dbv2-section-head"><h5 class="mb-0 text-uppercase" data-ts="tt-dbv2-secGame">Bonus, Adjustment &amp; Games</h5><span class="text-muted font-12" data-ts="tt-dbv2-secGameNote">Selected dates</span></div><div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3"><div class="col"><div class="card tilebox-one bg-warning bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-bonusTitle">Bonus Paid to Players</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Everything credited to players in the selected dates: &lt;b&gt;Bonus + Referral commission&lt;/b&gt;. The two parts are shown below."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="totalBonus">11,231.26</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-bonusOnly">Bonus</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="All bonus types: cashback, rebate and promotions. Equals Total Bonus minus Referral Commission in Daily Transaction Report."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="dbv2BonusOnly">11,231.26</span></div><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-referralCommission">Referral commission</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Referral commission paid to players in the selected dates. &lt;b&gt;Included in the total above.&lt;/b&gt;"><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="dbv2ReferralCommission">0.00</span></div></div></div></div><div class="col"><div class="card tilebox-one bg-warning bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-adjTitle">Adjustment (Net)</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Balance adjustments in the selected dates: &lt;b&gt;(+) added &amp;minus; (&amp;minus;) deducted&lt;/b&gt;.&lt;br&gt;Click &lt;b&gt;Breakdown&lt;/b&gt; to see the amount by category."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="totalAdjustment">0.00</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-adjAdded">(+) Added</span></span><span class="dbv2-sub-r" id="totalAdjustmentPositive">0.00</span></div><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-adjDeducted">(−) Deducted</span></span><span class="dbv2-sub-r" id="totalAdjustmentNegative">0.00</span></div><button type="button" class="btn btn-link btn-sm p-0 mt-1 fw-bold dbv2-breakdown" data-bs-toggle="modal" data-bs-target="#dbv2AdjModal"><i class="mdi mdi-format-list-bulleted"></i> <span data-ts="tt-dbv2-breakdown">Breakdown</span></button></div></div></div><div class="col"><div class="card tilebox-one bg-warning bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-turnoverTitle">Valid Turnover</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Total &lt;b&gt;valid bet amount&lt;/b&gt;, by game date. Voided and cancelled bets are excluded.&lt;br&gt;&lt;br&gt;Compare with the &lt;b&gt;Valid Turnover&lt;/b&gt; column of Report &amp;rarr; Win/Lose Summary By Product, not its Turnover column."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="totalTurnover">673,877.95</h3></div></div></div><div class="col"><div class="card tilebox-one bg-warning bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-winloseTitle">Player Win/Loss</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="&lt;b&gt;Total payout &amp;minus; valid turnover&lt;/b&gt;, from the &lt;b&gt;player's side&lt;/b&gt;.&lt;br&gt;&lt;b&gt;Negative = players lost = company won.&lt;/b&gt;&lt;br&gt;&lt;br&gt;Company GGR shows the same amount from the company's side.&lt;br&gt;&lt;br&gt;Same figure as the &lt;b&gt;Win/Lose&lt;/b&gt; total of Report &amp;rarr; Win/Lose Summary By Product."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="totalWinLose">-18,907.64</h3><div class="dbv2-sub"><span class="dbv2-sub-l"><span data-ts="tt-dbv2-ggr">Company GGR</span><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Gross Gaming Revenue from the company's side = valid turnover &amp;minus; payout. Positive = company won."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></span><span class="dbv2-sub-r" id="dbv2CompanyGgr"><span class="text-success">18,907.64</span></span></div></div></div></div></div></div><div class="dbv2-section"><div class="dbv2-section-head"><h5 class="mb-0 text-uppercase" data-ts="tt-dbv2-secSnap">Live Snapshot</h5><span class="text-muted font-12" data-ts="tt-dbv2-secSnapNote">Right now · not affected by the selected dates</span></div><div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3"><div class="col"><div class="card tilebox-one bg-success bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-balanceTitle">Player Cash Balance (Now)</span><span class="dbv2-scope" data-ts="tt-dbv2-now">now</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Current total balance of &lt;b&gt;all players' cash wallets, right now&lt;/b&gt;.&lt;br&gt;&lt;b&gt;Not affected by the selected dates.&lt;/b&gt;"><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="totalPlayerBalanceCash">34,625.73</h3></div></div></div><div class="col"><div class="card tilebox-one bg-success bg-opacity-10 h-100 mb-0"><div class="card-body"><div class="d-flex align-items-start"><h6 class="text-muted text-uppercase mt-0 mb-0 flex-grow-1"><span data-ts="tt-dbv2-inGameTitle">Players in Game (Last 5 min)</span><span class="dbv2-scope" data-ts="tt-dbv2-now">now</span></h6><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Players with &lt;b&gt;game activity in the last 5 minutes&lt;/b&gt;. Players who are logged in but not playing are not counted.&lt;br&gt;&lt;b&gt;Not affected by the selected dates.&lt;/b&gt;"><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><h3 class="text-truncate my-2" id="playerOnline">49</h3></div></div></div></div></div><div class="dbv2-section"><div class="dbv2-section-head"><h5 class="mb-0 text-uppercase" data-ts="tt-dbv2-secCharts">Charts</h5><span class="text-muted font-12" data-ts="tt-dbv2-secChartsNote">Selected dates, except where marked</span></div><div class="row row-cols-1 row-cols-xl-2 row-cols-xxl-3 g-3"><div class="col"><div class="card h-100 mb-0"><div class="d-flex card-header justify-content-between align-items-start"><div><h4 class="header-title mb-0"><span data-ts="tt-dbv2-chTxTitle">Daily Player Deposit, Withdrawal &amp; Adjustment</span></h4></div><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Per day: Player Deposit Amount, Player Withdrawal Amount and Adjustment. Same definitions as the cards above."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><div class="card-body"><div class="chart-container" style="width: 100%;"><div class="chart has-fixed-height" id="echart_transaction" _echarts_instance_="ec_1795673190837" style="position: relative;"><div style="position: relative; overflow: hidden; width: 453px; height: 400px;"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="453" height="400" style="position:absolute;left:0;top:0;user-select:none"><rect width="453" height="400" x="0" y="0" id="0" fill="none" fill-opacity="1"></rect><g><path d="M82.5 60L82.5 310" fill="none" stroke="#E0E6F1"></path><path d="M147.5 60L147.5 310" fill="none" stroke="#E0E6F1"></path><path d="M212.5 60L212.5 310" fill="none" stroke="#E0E6F1"></path><path d="M277.5 60L277.5 310" fill="none" stroke="#E0E6F1"></path><path d="M342.5 60L342.5 310" fill="none" stroke="#E0E6F1"></path><path d="M407.5 60L407.5 310" fill="none" stroke="#E0E6F1"></path><path d="M82.5 310L82.5 60" fill="none" stroke="#6E7079" stroke-linecap="round"></path><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(74.4387 185)" fill="#6E7079">11/26</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(82.4387 318)" fill="#6E7079">0</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(147.4909 318)" fill="#6E7079">20,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(212.5432 318)" fill="#6E7079">40,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(277.5955 318)" fill="#6E7079">60,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(342.6477 318)" fill="#6E7079">80,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(407.7 318)" fill="#6E7079">100,000</text><path d="M82.4387 88.75l320.6264 0l0 64.1667l-320.6264 0Z" fill="#55B9FF"></path><path d="M82.4387 152.9167l269.3164 0l0 64.1667l-269.3164 0Z" fill="#32F1FF"></path><path d="M82.4387 217.0833l0 0l0 64.1667l0 0Z" fill="#C7FF45"></path><path d="M-5 -5l286.752 0l0 24l-286.752 0Z" transform="translate(88.124 381)" fill="rgb(0,0,0)" fill-opacity="0" stroke="#ccc" stroke-width="0"></path><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(88.124 381)" fill="#55B9FF"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(88.124 381)" fill="var(--body-color)">Deposit</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(172.585 381)" fill="#32F1FF"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(172.585 381)" fill="var(--body-color)">Withdraw</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(268.2139 381)" fill="#C7FF45"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(268.2139 381)" fill="var(--body-color)">Adjustment</text></g></svg></div><div class=""></div></div></div></div></div></div><div class="col"><div class="card h-100 mb-0"><div class="d-flex card-header justify-content-between align-items-start"><div><h4 class="header-title mb-0"><span data-ts="tt-dbv2-chGameTitle">Daily Valid Turnover &amp; Player Win/Loss</span></h4></div><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Per day: Valid Turnover and Player Win/Loss (negative = company won)."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><div class="card-body"><div class="chart-container" style="width: 100%;"><div class="chart has-fixed-height" id="echart_TOWOBouns" _echarts_instance_="ec_1795673190838" style="position: relative;"><div style="position: relative; overflow: hidden; width: 453px; height: 400px; cursor: default;"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="453" height="400" style="position:absolute;left:0;top:0;user-select:none"><rect width="453" height="400" x="0" y="0" id="0" fill="none" fill-opacity="1"></rect><g><path d="M82.5 60L82.5 310" fill="none" stroke="#E0E6F1"></path><path d="M123.5 60L123.5 310" fill="none" stroke="#E0E6F1"></path><path d="M164.5 60L164.5 310" fill="none" stroke="#E0E6F1"></path><path d="M204.5 60L204.5 310" fill="none" stroke="#E0E6F1"></path><path d="M245.5 60L245.5 310" fill="none" stroke="#E0E6F1"></path><path d="M285.5 60L285.5 310" fill="none" stroke="#E0E6F1"></path><path d="M326.5 60L326.5 310" fill="none" stroke="#E0E6F1"></path><path d="M367.5 60L367.5 310" fill="none" stroke="#E0E6F1"></path><path d="M407.5 60L407.5 310" fill="none" stroke="#E0E6F1"></path><path d="M123.5 310L123.5 60" fill="none" stroke="#6E7079" stroke-linecap="round"></path><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(74.4387 185)" fill="#6E7079">11/26</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(82.4387 318)" fill="#6E7079">-100,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(123.0963 318)" fill="#6E7079">0</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(163.754 318)" fill="#6E7079">100,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(204.4117 318)" fill="#6E7079">200,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(245.0693 318)" fill="#6E7079">300,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(285.727 318)" fill="#6E7079">400,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(326.3847 318)" fill="#6E7079">500,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(367.0423 318)" fill="#6E7079">600,000</text><path d="M123.0963 93.75l273.983 0l0 91.25l-273.983 0Z" fill="#55B9FF"></path><path d="M123.0963 185l-7.6874 0l0 91.25l7.6874 0Z" fill="#C7FF45"></path><path d="M-5 -5l207.7578 0l0 24l-207.7578 0Z" transform="translate(127.6211 381)" fill="rgb(0,0,0)" fill-opacity="0" stroke="#ccc" stroke-width="0"></path><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(127.6211 381)" fill="#55B9FF"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" xml:space="preserve" x="30" y="7" transform="translate(127.6211 381)" fill="var(--body-color)">Valid Turnover</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(249.3945 381)" fill="#C7FF45"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(249.3945 381)" fill="var(--body-color)">Winlose</text></g></svg></div><div class="" style="position: absolute; display: block; border-style: solid; white-space: nowrap; z-index: 9999999; box-shadow: rgba(0, 0, 0, 0.2) 1px 2px 10px; transition: opacity 0.2s cubic-bezier(0.23, 1, 0.32, 1), visibility 0.2s cubic-bezier(0.23, 1, 0.32, 1), transform 0.4s cubic-bezier(0.23, 1, 0.32, 1); background-color: rgb(255, 255, 255); border-width: 1px; border-radius: 4px; color: rgb(0, 0, 0); font: 14px / 21px &quot;Microsoft YaHei&quot;; padding: 10px; top: 0px; left: 0px; transform: translate3d(152px, 125px, 0px); border-color: rgb(85, 185, 255); pointer-events: none; visibility: hidden; opacity: 0;">Valid Turnover<br><span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: #55B9FF; margin-right: 5px;"></span>11/26 <strong>673877.95</strong></div></div></div></div></div></div><div class="col"><div class="card h-100 mb-0"><div class="d-flex card-header justify-content-between align-items-start"><div><h4 class="header-title mb-0"><span data-ts="tt-dbv2-chRegTitle">Daily New Registrations</span></h4></div><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="New player accounts registered per day."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><div class="card-body"><div class="chart-container" style="width: 100%;"><div class="chart has-fixed-height" id="echart_newRegister" _echarts_instance_="ec_1795673190839" style="position: relative;"><div style="position: relative; overflow: hidden; width: 453px; height: 400px; cursor: default;"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="453" height="400" style="position:absolute;left:0;top:0;user-select:none"><rect width="453" height="400" x="0" y="0" id="0" fill="none" fill-opacity="1"></rect><g><path d="M73.3215 310.5L407.7 310.5" fill="none" stroke="#E0E6F1"></path><path d="M73.3215 274.5L407.7 274.5" fill="none" stroke="#E0E6F1"></path><path d="M73.3215 238.5L407.7 238.5" fill="none" stroke="#E0E6F1"></path><path d="M73.3215 203.5L407.7 203.5" fill="none" stroke="#E0E6F1"></path><path d="M73.3215 167.5L407.7 167.5" fill="none" stroke="#E0E6F1"></path><path d="M73.3215 131.5L407.7 131.5" fill="none" stroke="#E0E6F1"></path><path d="M73.3215 95.5L407.7 95.5" fill="none" stroke="#E0E6F1"></path><path d="M73.3215 60.5L407.7 60.5" fill="none" stroke="#E0E6F1"></path><path d="M73.3215 310.5L407.7 310.5" fill="none" stroke="#6E7079" stroke-linecap="round"></path><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(65.3215 310)" fill="#6E7079">0</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(65.3215 274.2857)" fill="#6E7079">100</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(65.3215 238.5714)" fill="#6E7079">200</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(65.3215 202.8571)" fill="#6E7079">300</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(65.3215 167.1429)" fill="#6E7079">400</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(65.3215 131.4286)" fill="#6E7079">500</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(65.3215 95.7143)" fill="#6E7079">600</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(65.3215 60)" fill="#6E7079">700</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(240.5107 318)" fill="#6E7079">11/26</text><g clip-path="url(#zr2-c0)"><path d="M240.5107 85" fill="none" stroke="#32F1FF" stroke-width="2" stroke-linejoin="bevel"></path></g><path d="M1 0A1 1 0 1 1 1 -0.0001" transform="matrix(2,0,0,2,240.5107,85)" fill="#fff" stroke="#32F1FF"></path><path d="M-5 -5l117.0547 0l0 23.2l-117.0547 0Z" transform="translate(172.9727 381.8)" fill="rgb(0,0,0)" fill-opacity="0" stroke="#ccc" stroke-width="0"></path><path d="M0 7L25 7" transform="translate(173.9727 381.4)" fill="#000" stroke="#32F1FF" stroke-width="2" stroke-linecap="butt" stroke-miterlimit="10"></path><path d="M18.1 7A5.6 5.6 0 1 1 18.1 6.9994" transform="translate(173.9727 381.4)" fill="#fff" stroke="#32F1FF" stroke-width="2" stroke-linecap="butt" stroke-miterlimit="10"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" xml:space="preserve" x="30" y="7" transform="translate(173.9727 381.4)" fill="var(--body-color)">New Register</text></g><defs><clipPath id="zr2-c0"><path d="M72 59l336 0l0 252l-336 0Z" fill="#000"></path></clipPath></defs></svg></div><div class=""></div></div></div></div></div></div><div class="col"><div class="card h-100 mb-0"><div class="d-flex card-header justify-content-between align-items-start"><div><h4 class="header-title mb-0"><span data-ts="tt-dbv2-chHourTitle">Hourly Player Deposit, Valid Turnover &amp; Depositing Players</span></h4></div><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="For &lt;b&gt;each hour&lt;/b&gt; in the selected dates: Player Deposit Amount, Valid Turnover, and Depositing Players (different players who deposited in that hour)."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><div class="card-body"><div class="chart-container" style="width: 100%;"><div class="chart has-fixed-height" id="echart_hourlyDepositAndTurnover" _echarts_instance_="ec_1795673190840" style="position: relative;"><div style="position: relative; overflow: hidden; width: 453px; height: 400px;"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="453" height="400" style="position:absolute;left:0;top:0;user-select:none"><rect width="453" height="400" x="0" y="0" id="0" fill="none" fill-opacity="1"></rect><g><path d="M64.967 268.5L434.88 268.5" fill="none" stroke="#E0E6F1"></path><path d="M64.967 218.5L434.88 218.5" fill="none" stroke="#E0E6F1"></path><path d="M64.967 169.5L434.88 169.5" fill="none" stroke="#E0E6F1"></path><path d="M64.967 119.5L434.88 119.5" fill="none" stroke="#E0E6F1"></path><path d="M64.967 69.5L434.88 69.5" fill="none" stroke="#E0E6F1"></path><path d="M64.967 20.5L434.88 20.5" fill="none" stroke="#E0E6F1"></path><path d="M64.967 268.5L434.88 268.5" fill="none" stroke="#6E7079" stroke-linecap="round"></path><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(56.967 268)" fill="#6E7079">0</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(56.967 218.4)" fill="#6E7079">20,000</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(56.967 168.8)" fill="#6E7079">40,000</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(56.967 119.2)" fill="#6E7079">60,000</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(56.967 69.6)" fill="#6E7079">80,000</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(56.967 20)" fill="#6E7079">100,000</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(64.967 276)" fill="#6E7079">11/26</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="18" transform="translate(64.967 276)" fill="#6E7079">00h</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(178.7864 276)" fill="#6E7079">11/26</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="18" transform="translate(178.7864 276)" fill="#6E7079">04h</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(292.6058 276)" fill="#6E7079">11/26</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="18" transform="translate(292.6058 276)" fill="#6E7079">08h</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="6" transform="translate(406.4252 276)" fill="#6E7079">11/26</text><text dominant-baseline="central" text-anchor="middle" style="font-size:12px;font-family:Microsoft YaHei;" y="18" transform="translate(406.4252 276)" fill="#6E7079">12h</text><g clip-path="url(#zr3-c0)"><path d="M64.9669 245.8139L93.4218 250.5805L121.8767 259.5556L150.3315 256.1927L178.7863 262.2018L207.2412 258.0478L235.696 260.183L264.1509 253.435L292.6057 251.3022L321.0606 245.4593L349.5154 240.0802L377.9703 229.4757L406.4251 230.6537L434.88 264.5528" fill="none" stroke="#32F1FF" stroke-width="3" stroke-linejoin="bevel"></path></g><g clip-path="url(#zr3-c1)"><path d="M64.9669 82.9527L93.4218 101.4111L121.8767 166.9249L150.3315 176.951L178.7863 199.5505L207.2412 193.7178L235.696 200.6568L264.1509 177.6382L292.6057 137.3648L321.0606 132.5167L349.5154 143.6152L377.9703 87.869L406.4251 37.6097L434.88 242.004" fill="none" stroke="#FF9F7F" stroke-width="3" stroke-linejoin="bevel"></path></g><g clip-path="url(#zr3-c2)"><path d="M64.9669 267.8785L93.4218 267.9157L121.8767 267.9355L150.3315 267.9355L178.7863 267.9454L207.2412 267.9281L235.696 267.9281L264.1509 267.9182L292.6057 267.8785L321.0606 267.8463L349.5154 267.7842L377.9703 267.7594L406.4251 267.7619L434.88 267.9752" fill="none" stroke="#C1AAFF" stroke-width="3" stroke-linejoin="bevel"></path></g><path d="M-5 -5l414.9023 0l0 23.2l-414.9023 0Z" transform="translate(24.0488 381.8)" fill="rgb(0,0,0)" fill-opacity="0" stroke="#ccc" stroke-width="0"></path><path d="M0 7L25 7" transform="translate(25.0488 381.4)" fill="#000" stroke="#32F1FF" stroke-width="2" stroke-linecap="butt" stroke-miterlimit="10"></path><path d="M18.1 7A5.6 5.6 0 1 1 18.1 6.9994" transform="translate(25.0488 381.4)" fill="#fff" stroke="#32F1FF" stroke-width="2" stroke-linecap="butt" stroke-miterlimit="10"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" xml:space="preserve" x="30" y="7" transform="translate(25.0488 381.4)" fill="var(--body-color)">Deposit Amount</text><path d="M0 7L25 7" transform="translate(160.6367 381.4)" fill="#000" stroke="#FF9F7F" stroke-width="2" stroke-linecap="butt" stroke-miterlimit="10"></path><path d="M18.1 7A5.6 5.6 0 1 1 18.1 6.9994" transform="translate(160.6367 381.4)" fill="#fff" stroke="#FF9F7F" stroke-width="2" stroke-linecap="butt" stroke-miterlimit="10"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" xml:space="preserve" x="30" y="7" transform="translate(160.6367 381.4)" fill="var(--body-color)">Turnover Amount</text><path d="M0 7L25 7" transform="translate(302.1074 381.4)" fill="#000" stroke="#C1AAFF" stroke-width="2" stroke-linecap="butt" stroke-miterlimit="10"></path><path d="M18.1 7A5.6 5.6 0 1 1 18.1 6.9994" transform="translate(302.1074 381.4)" fill="#fff" stroke="#C1AAFF" stroke-width="2" stroke-linecap="butt" stroke-miterlimit="10"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" xml:space="preserve" x="30" y="7" transform="translate(302.1074 381.4)" fill="var(--body-color)">Deposit Member</text></g><defs><clipPath id="zr3-c0"><path d="M63 18.5l373 0l0 251l-373 0Z" fill="#000"></path></clipPath><clipPath id="zr3-c1"><path d="M63 18.5l373 0l0 251l-373 0Z" fill="#000"></path></clipPath><clipPath id="zr3-c2"><path d="M63 18.5l373 0l0 251l-373 0Z" fill="#000"></path></clipPath></defs></svg></div><div class=""></div></div></div></div></div></div><div class="col"><div class="card h-100 mb-0"><div class="d-flex card-header justify-content-between align-items-start"><div><h4 class="header-title mb-0"><span data-ts="tt-dbv2-chTopTitle">Top 10 Depositing &amp; Withdrawing Players</span></h4></div><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="Players with the highest total &lt;b&gt;approved deposits&lt;/b&gt; and &lt;b&gt;withdrawals&lt;/b&gt; in the selected dates."><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><div class="card-body"><div class="row has-fixed-height"><div class="col-12"><h4 class="header-title text-decoration-underline" data-ts="tt-dbv2-topDep">Top Depositing Players</h4><div id="topDeposit">
+            <div class="table-responsive" style="max-height: 180px; ">
+                <div id="topDepositTable_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer"><div class="row"><div class="col-sm-12 col-md-6"></div><div class="col-sm-12 col-md-6"></div></div><div class="row"><div class="col-sm-12"><table id="topDepositTable" class="table table-striped small dataTable no-footer">
+                    <thead>
+                        <tr><th class="sorting_disabled text-end" rowspan="1" colspan="1" style="width: 47.7083px;">#</th><th class="sorting_disabled text-end" rowspan="1" colspan="1" style="width: 135.583px;">Player ID</th><th class="sorting_disabled text-end" rowspan="1" colspan="1" style="width: 107.521px;">Amount</th></tr>
+                    <tr class="smm-total-row table-light"><td class="fw-bold">Total (10)</td><td class="fw-bold"></td><td class="fw-bold text-end">17,427.00</td></tr></thead>
+                    <tbody>
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                    <tr class="odd">
+                                <td class="text-end">1</td>
+                                <td class="text-end">816793726</td>
+                                <td class="text-end">5,361.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">2</td>
+                                <td class="text-end">823078067</td>
+                                <td class="text-end">2,500.00</td>
+                            </tr><tr class="odd">
+                                <td class="text-end">3</td>
+                                <td class="text-end">806304725</td>
+                                <td class="text-end">1,500.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">4</td>
+                                <td class="text-end">954522158</td>
+                                <td class="text-end">1,499.00</td>
+                            </tr><tr class="odd">
+                                <td class="text-end">5</td>
+                                <td class="text-end">621530266</td>
+                                <td class="text-end">1,200.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">6</td>
+                                <td class="text-end">827606913</td>
+                                <td class="text-end">1,150.00</td>
+                            </tr><tr class="odd">
+                                <td class="text-end">7</td>
+                                <td class="text-end">815606377</td>
+                                <td class="text-end">1,100.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">8</td>
+                                <td class="text-end">923701906</td>
+                                <td class="text-end">1,067.00</td>
+                            </tr><tr class="odd">
+                                <td class="text-end">9</td>
+                                <td class="text-end">927265110</td>
+                                <td class="text-end">1,050.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">10</td>
+                                <td class="text-end">875577875</td>
+                                <td class="text-end">1,000.00</td>
+                            </tr></tbody>
+                <tfoot><tr class="smm-total-row table-light"><td class="fw-bold">Total (10)</td><td class="fw-bold"></td><td class="fw-bold text-end">17,427.00</td></tr></tfoot></table></div></div><div class="row"><div class="col-sm-12 col-md-5"></div><div class="col-sm-12 col-md-7"></div></div></div>
+            </div>
+        </div></div><div class="col-12"><h4 class="header-title text-decoration-underline" data-ts="tt-dbv2-topWd">Top Withdrawing Players</h4><div id="topWithdraw">
+            <div class="table-responsive" style="max-height: 180px;">
+                <div id="topWithdrawTable_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer"><div class="row"><div class="col-sm-12 col-md-6"></div><div class="col-sm-12 col-md-6"></div></div><div class="row"><div class="col-sm-12"><table id="topWithdrawTable" class="table table-striped small dataTable no-footer">
+                    <thead>
+                        <tr><th class="sorting_disabled text-end" rowspan="1" colspan="1" style="width: 47.7083px;">#</th><th class="sorting_disabled text-end" rowspan="1" colspan="1" style="width: 135.583px;">Player ID</th><th class="sorting_disabled text-end" rowspan="1" colspan="1" style="width: 107.521px;">Amount</th></tr>
+                    <tr class="smm-total-row table-light"><td class="fw-bold">Total (10)</td><td class="fw-bold"></td><td class="fw-bold text-end">41,300.00</td></tr></thead>
+                    <tbody>
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                            
+                        
+                    <tr class="odd">
+                                <td class="text-end">1</td>
+                                <td class="text-end">816793726</td>
+                                <td class="text-end">7,050.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">2</td>
+                                <td class="text-end">983297549</td>
+                                <td class="text-end">7,000.00</td>
+                            </tr><tr class="odd">
+                                <td class="text-end">3</td>
+                                <td class="text-end">807692135</td>
+                                <td class="text-end">6,000.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">4</td>
+                                <td class="text-end">817664484</td>
+                                <td class="text-end">5,500.00</td>
+                            </tr><tr class="odd">
+                                <td class="text-end">5</td>
+                                <td class="text-end">827606913</td>
+                                <td class="text-end">3,300.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">6</td>
+                                <td class="text-end">615462541</td>
+                                <td class="text-end">3,050.00</td>
+                            </tr><tr class="odd">
+                                <td class="text-end">7</td>
+                                <td class="text-end">971866175</td>
+                                <td class="text-end">2,700.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">8</td>
+                                <td class="text-end">937721207</td>
+                                <td class="text-end">2,500.00</td>
+                            </tr><tr class="odd">
+                                <td class="text-end">9</td>
+                                <td class="text-end">806910766</td>
+                                <td class="text-end">2,200.00</td>
+                            </tr><tr class="even">
+                                <td class="text-end">10</td>
+                                <td class="text-end">659106234</td>
+                                <td class="text-end">2,000.00</td>
+                            </tr></tbody>
+                <tfoot><tr class="smm-total-row table-light"><td class="fw-bold">Total (10)</td><td class="fw-bold"></td><td class="fw-bold text-end">41,300.00</td></tr></tfoot></table></div></div><div class="row"><div class="col-sm-12 col-md-5"></div><div class="col-sm-12 col-md-7"></div></div></div>
+            </div>
+        </div></div></div></div></div></div><div class="col"><div class="card h-100 mb-0"><div class="d-flex card-header justify-content-between align-items-start"><div><h4 class="header-title mb-0"><span data-ts="tt-dbv2-chIpTitle">Top 10 Registration IPs (All Time)</span><span class="dbv2-scope" data-ts="tt-dbv2-allTime">all time</span></h4></div><button type="button" class="btn btn-sm p-0 ms-1 dbv2-tip" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-html="true" data-bs-title="IP addresses with the most player registrations &lt;b&gt;since the brand started&lt;/b&gt;.&lt;br&gt;&lt;b&gt;Not affected by the selected dates.&lt;/b&gt;"><i class="mdi mdi-alpha-i-circle-outline font-16"></i></button></div><div class="card-body"><div class="chart-container" style="width: 100%;"><div class="chart has-fixed-height" id="echart_top10RegisterIP" _echarts_instance_="ec_1795673190841" style="position: relative;"><div style="position: relative; overflow: hidden; width: 453px; height: 400px;"><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" width="453" height="400" style="position:absolute;left:0;top:0;user-select:none"><rect width="453" height="400" x="0" y="0" id="0" fill="none" fill-opacity="1"></rect><g><path d="M276.3498 50.8442L282.581 37.1997L297.581 37.1997" fill="none" stroke="#FFA745"></path><path d="M341.6392 126.1921L356.0316 121.9661L371.0316 121.9661" fill="none" stroke="#FFE25C"></path><path d="M335.6558 209.8498L349.3003 216.081L364.3003 216.081" fill="none" stroke="#45FF81"></path><path d="M291.3769 260.9504L299.4865 273.5692L314.4865 273.5692" fill="none" stroke="#C1AAFF"></path><path d="M226.5 280L226.5 295L241.5 295" fill="none" stroke="#55B9FF"></path><path d="M161.6231 260.9504L153.5135 273.5692L138.5135 273.5692" fill="none" stroke="#FD86FF"></path><path d="M117.3442 209.8498L103.6997 216.081L88.6997 216.081" fill="none" stroke="#FF7E7E"></path><path d="M107.7214 142.9222L92.8741 140.7875L77.8741 140.7875" fill="none" stroke="#99D767"></path><path d="M135.8101 81.4167L124.4738 71.5938L109.4738 71.5938" fill="none" stroke="#2AB5C1"></path><path d="M192.6921 44.8608L188.4661 30.4684L173.4661 30.4684" fill="none" stroke="#1FE5DE"></path><path d="M226.5 40A120 120 0 0 1 317.1899 81.4167L286.96 107.6111A80 80 0 0 0 226.5 80Z" fill="#FFA745"></path><path d="M317.1899 81.4167A120 120 0 0 1 345.2786 177.0778L305.6857 171.3852A80 80 0 0 0 286.96 107.6111Z" fill="#FFE25C"></path><path d="M345.2786 177.0778A120 120 0 0 1 317.1899 238.5833L286.96 212.3889A80 80 0 0 0 305.6857 171.3852Z" fill="#45FF81"></path><path d="M317.1899 238.5833A120 120 0 0 1 260.3079 275.1392L249.0386 236.7594A80 80 0 0 0 286.96 212.3889Z" fill="#C1AAFF"></path><path d="M260.3079 275.1392A120 120 0 0 1 192.6921 275.1392L203.9614 236.7594A80 80 0 0 0 249.0386 236.7594Z" fill="#55B9FF"></path><path d="M192.6921 275.1392A120 120 0 0 1 135.8101 238.5833L166.04 212.3889A80 80 0 0 0 203.9614 236.7594Z" fill="#FD86FF"></path><path d="M135.8101 238.5833A120 120 0 0 1 107.7214 177.0778L147.3143 171.3852A80 80 0 0 0 166.04 212.3889Z" fill="#FF7E7E"></path><path d="M107.7214 177.0778A120 120 0 0 1 117.3442 110.1502L153.7294 126.7668A80 80 0 0 0 147.3143 171.3852Z" fill="#99D767"></path><path d="M117.3442 110.1502A120 120 0 0 1 161.6231 59.0496L183.2487 92.6997A80 80 0 0 0 153.7294 126.7668Z" fill="#2AB5C1"></path><path d="M161.6231 59.0496A120 120 0 0 1 226.5 40L226.5 80A80 80 0 0 0 183.2487 92.6997Z" fill="#1FE5DE"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(302.581 37.1997)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">3</text><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(376.0316 121.9661)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">3</text><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(369.3003 216.081)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">2</text><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(319.4865 273.5692)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">2</text><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(246.5 295)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">2</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(133.5135 273.5692)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">2</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(83.6997 216.081)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">2</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(72.8741 140.7875)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">2</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(104.4738 71.5938)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">2</text><text dominant-baseline="central" text-anchor="end" style="font-size:12px;font-family:Microsoft YaHei;" transform="translate(168.4661 30.4684)" fill="#333" stroke="rgb(255,255,255)" stroke-width="2" paint-order="stroke" stroke-miterlimit="2">2</text><path d="M-5 -5l448 0l0 72l-448 0Z" transform="translate(7.5 333)" fill="rgb(0,0,0)" fill-opacity="0" stroke="#ccc" stroke-width="0"></path><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(7.5 333)" fill="#FFA745"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(7.5 333)" fill="var(--body-color)">183.88.238.131</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(133.5742 333)" fill="#FFE25C"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(133.5742 333)" fill="var(--body-color)">2407:4280:c0e:561:e169:9ec6:237e:e5c1</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(7.5 357)" fill="#45FF81"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(7.5 357)" fill="var(--body-color)">130.12.43.84</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(119.5 357)" fill="#C1AAFF"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(119.5 357)" fill="var(--body-color)">1.47.143.94</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(224.4629 357)" fill="#55B9FF"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(224.4629 357)" fill="var(--body-color)">124.120.0.49</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(336.4629 357)" fill="#FD86FF"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(336.4629 357)" fill="var(--body-color)">125.25.207.81</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(7.5 381)" fill="#FF7E7E"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(7.5 381)" fill="var(--body-color)">1.46.21.0</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(98.3887 381)" fill="#99D767"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(98.3887 381)" fill="var(--body-color)">1.46.11.44</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(196.3145 381)" fill="#2AB5C1"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(196.3145 381)" fill="var(--body-color)">1.46.58.12</text><path d="M3.5 0L21.5 0A3.5 3.5 0 0 1 25 3.5L25 10.5A3.5 3.5 0 0 1 21.5 14L3.5 14A3.5 3.5 0 0 1 0 10.5L0 3.5A3.5 3.5 0 0 1 3.5 0" transform="translate(294.2402 381)" fill="#1FE5DE"></path><text dominant-baseline="central" text-anchor="start" style="font-size:12px;font-family:Microsoft YaHei;" x="30" y="7" transform="translate(294.2402 381)" fill="var(--body-color)">1.46.28.171</text></g></svg></div><div class=""></div></div></div></div></div></div></div></div>
+                </div>
+            </div>
+
+            <footer class="footer">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            2022 -
+                            <script>document.write(new Date().getFullYear())</script>2026 © V3 - Backoffice
+                        </div>
+                    </div>
+                </div>
+            </footer>
+
+        </div>
+
+    </div>
+
+    <div id="alertModal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content">
+                <div class="modal-body p-4">
+                    <div class="text-center">
+                        <input type="hidden" name="formId">
+                        <i class="ri-alert-line h1 text-warning" smmalerticon=""></i>
+                        <h4 class="mt-1 mb-3" smmalert="" smmalerttitle=""><i class="mdi mdi-spin mdi-loading"></i></h4>
+                        <p class="my-2" smmalert="" smmalertmsg=""><i class="mdi mdi-spin mdi-loading"></i></p>
+                        <button type="button" class="btn btn-danger m-0 mt-2" data-bs-dismiss="modal" data-ts="tt-no">No</button>
+                        <button type="button" class="btn btn-success m-0 mt-2" onclick="submitAlertModal()" data-ts="tt-yes">Yes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="changePasswordModal" class="modal fade" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-colored-header bg-dark">
+                    <h4 class="modal-title" id="standard-modalLabel" data-ts="tt-changePassword">Change Password</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <form id="smmFMchangePassword" novalidate="novalidate">
+                    <div class="modal-body">
+                        <div class="form-floating mb-2">
+                            <input type="password" class="form-control" placeholder="" name="oldPassword" autocomplete="off">
+                            <label data-ts="tt-currentPassword">Current Password</label>
+                        </div>
+                        <div class="form-floating mb-2">
+                            <input type="password" class="form-control" placeholder="" name="newPassword" autocomplete="new-password" id="newPassword">
+                            <label data-ts="tt-newPassword">New Password</label>
+                        </div>
+                        <div class="form-floating">
+                            <input type="password" class="form-control" placeholder="" name="confirmNewPassword" autocomplete="new-password">
+                            <label data-ts="tt-confirmNewPassword">Confirm New Password</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal" data-ts="tt-close">Close</button>
+                        <button type="submit" class="btn btn-primary" data-ts="tt-submit">Submit</button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+
+    <div id="dbv2AdjModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="dbv2AdjModalTitle">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-warning bg-opacity-25">
+                    <h4 class="modal-title" id="dbv2AdjModalTitle" data-ts="tt-dbv2-bdTitle">Adjustment Breakdown</h4>
+                    <span class="ms-3 text-muted font-13" id="dbv2AdjPeriod">2026-11-26 - 2026-11-26</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0">
+                    <p class="font-13 text-muted px-3 py-2 mb-0 border-bottom" data-ts="tt-dbv2-bdNote"><b>Manual Adjustment</b> = balance changes made by operators, grouped by the Category chosen when the request was submitted.<br><b>System (Game Cancel)</b> = refunds from cancelled game rounds.</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0" id="dbv2AdjTable"><thead class="table-light"><tr><th>Category</th><th class="text-end">Count</th><th class="text-end">Net Amount</th></tr></thead><tbody><tr class="table-secondary"><td colspan="3" class="fw-bold">Manual Adjustment (by operators)</td></tr><tr><td class="ps-4">Deposit Correction</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr><td class="ps-4">Withdraw Correction</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr><td class="ps-4">Free Credit / Bonus</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr><td class="ps-4">Deduction / Penalty</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr><td class="ps-4">Testing</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr><td class="ps-4">Others</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr><td class="ps-4">Uncategorized</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr class="fw-bold"><td class="ps-4">Subtotal</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr class="table-secondary"><td colspan="3" class="fw-bold">System (Game Cancel)</td></tr><tr><td class="ps-4">Game Cancel Bet</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr><td class="ps-4">Game Cancel Payout</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr><tr class="fw-bold"><td class="ps-4">Subtotal</td><td class="text-end">0</td><td class="text-end"><span class="">0.00</span></td></tr></tbody><tfoot><tr class="bg-dark text-light fw-bold"><td>Adjustment (Net)</td><td class="text-end">0</td><td class="text-end">0.00</td></tr></tfoot></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/hyper-config.js"></script>
+    <script src="assets/js/vendor.min.js"></script>
+    <script src="assets/js/app.min.js"></script>
+
+    <script src="assets/vendor/daterangepicker/moment.min.js"></script>
+    <script src="assets/vendor/daterangepicker/daterangepicker.js"></script>
+    <!-- <script src="assets/vendor/apexcharts/apexcharts.min.js"></script> -->
+    <script src="assets/vendor/admin-resources/jquery.vectormap/jquery-jvectormap-1.2.2.min.js"></script>
+    <script src="assets/vendor/admin-resources/jquery.vectormap/maps/jquery-jvectormap-world-mill-en.js"></script>
+    <script src="assets/vendor/datatables.net/js/jquery.dataTables.min.js"></script>
+    <script src="assets/vendor/datatables.net-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="assets/vendor/datatables.net-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="assets/vendor/datatables.net-responsive-bs5/js/responsive.bootstrap5.min.js"></script>
+    <script src="assets/vendor/jquery-toast-plugin/jquery.toast.min.js"></script>
+    <script src="assets/vendor/echarts/echarts.min.js"></script>
+
+
+
+    <script src="assets/plugins/validate/jquery.validate.min.js"></script>
+    <script src="assets/js/custom/setting.js"></script>
+    <script src="assets/js/custom/lang.js?v=20261124a"></script>
+    <script src="assets/js/custom/core.js?v=20261124r"></script>
+    <script src="assets/js/custom/page/bonus-data.js"></script>
+    <script src="assets/js/custom/page/dashboard.js?v=20261124a"></script>
+    <script src="assets/js/custom/page/dashboard-v2.js?v=20261106b"></script>
+
+
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon="{&quot;version&quot;:&quot;2024.11.0&quot;,&quot;token&quot;:&quot;8a506b76b09a482889717881e4527b25&quot;,&quot;r&quot;:1,&quot;spa&quot;:2}" crossorigin="anonymous"></script>
+
+
+<div class="daterangepicker ltr show-ranges opensright"><div class="ranges"><ul><li data-range-key="Today">Today</li><li data-range-key="Yesterday">Yesterday</li><li data-range-key="Last 7 Days">Last 7 Days</li><li data-range-key="Last 30 Days">Last 30 Days</li><li data-range-key="This Month">This Month</li><li data-range-key="Last Month">Last Month</li><li data-range-key="Custom Range">Custom Range</li></ul></div><div class="drp-calendar left"><div class="calendar-table"></div><div class="calendar-time" style="display: none;"></div></div><div class="drp-calendar right"><div class="calendar-table"></div><div class="calendar-time" style="display: none;"></div></div><div class="drp-buttons"><span class="drp-selected"></span><button class="cancelBtn btn btn-sm btn-default" type="button">Cancel</button><button class="applyBtn btn btn-sm btn-primary" disabled="disabled" type="button">Apply</button> </div></div><div class="jq-toast-wrap top-right"><div class="jq-toast-single jq-has-icon jq-icon-info" style="text-align: left;"><span class="jq-toast-loader jq-toast-loaded" style="-webkit-transition: width 59.6s ease-in;                       -o-transition: width 59.6s ease-in;                       transition: width 59.6s ease-in;                       background-color: rgba(255,255,0,0.3);"></span><span class="close-jq-toast-single">×</span><h2 class="jq-toast-heading">[CM8] New Withdraw Request</h2>New Withdraw Request from player: 984014009</div></div></body></html>
