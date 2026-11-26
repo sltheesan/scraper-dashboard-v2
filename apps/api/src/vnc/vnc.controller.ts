@@ -13,7 +13,7 @@ function cleanup() {
   }
 }
 
-@Controller('api/vnc')
+@Controller('vnc')
 export class VncController {
   @Post('token')
   @UseGuards(JwtAuthGuard)
