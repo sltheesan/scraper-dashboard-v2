@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/contexts/toast-context';
 
 interface PlatformConfig {
   dayCutover: string;
@@ -39,6 +40,7 @@ export default function SettingsPage() {
     restricted: false, sendImage: true, sendText: true,
     allowedChatIds: [], alertChatIds: [], allowedUsernames: [],
   });
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -63,6 +65,7 @@ export default function SettingsPage() {
 
   function showSuccess(msg: string) {
     setSuccess(msg);
+    toast(msg, 'success');
     setTimeout(() => setSuccess(''), 3000);
   }
 
@@ -149,7 +152,7 @@ export default function SettingsPage() {
     } catch (e: any) { setError(e.message); }
   }
 
-  if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><div className="spinner" /></div>;
 
   return (
     <div className="settings-page">

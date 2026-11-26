@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, type FormEvent } from 'react';
 import Link from 'next/link';
 import { api, ApiError } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/contexts/toast-context';
 
 interface Profile {
   id: string;
@@ -82,6 +83,7 @@ const PAGE_SIZE = 20;
 
 export default function ProfilesPage() {
   const { user, hasPrivilege } = useAuth();
+  const { toast } = useToast();
   const canEdit = hasPrivilege('profiles.edit');
   const canDelete = hasPrivilege('profiles.delete');
 
@@ -241,9 +243,11 @@ export default function ProfilesPage() {
       }
       setShowForm(false);
       setEditingId(null);
+      toast(editingId ? 'Profile updated' : 'Profile created', 'success');
       await loadProfiles();
     } catch (err: any) {
       setError(err.message || 'Save failed');
+      toast(err.message || 'Save failed', 'error');
     }
   }
 
@@ -400,20 +404,20 @@ export default function ProfilesPage() {
     }
   }
 
-  if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><div className="spinner" /></div>;
 
   return (
     <div>
-      <div className="page-actions">
-        <div className="filter-bar">
+      <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="flex flex-col sm:flex-row gap-2 flex-1 min-w-0">
           <input
-            className="filter-search"
+            className="bg-surface border border-border rounded-sm px-3 py-2 text-sm text-[var(--text)] placeholder:text-muted/60 focus:border-accent outline-none flex-1 min-w-0 sm:max-w-[260px]"
             placeholder="Search profiles..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
           <select
-            className="filter-select"
+            className="bg-surface border border-border rounded-sm px-2 py-2 text-sm text-[var(--text)] cursor-pointer min-w-[120px]"
             value={kindFilter}
             onChange={(e) => setKindFilter(e.target.value as any)}
           >
@@ -423,7 +427,7 @@ export default function ProfilesPage() {
             <option value="ONEOPSPORTAL">OneOpsPortal</option>
           </select>
           <select
-            className="filter-select"
+            className="bg-surface border border-border rounded-sm px-2 py-2 text-sm text-[var(--text)] cursor-pointer min-w-[120px]"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -434,7 +438,7 @@ export default function ProfilesPage() {
           </select>
         </div>
         {canEdit && (
-          <button className="btn btn-primary" onClick={openCreate}>
+          <button className="btn btn-primary whitespace-nowrap" onClick={openCreate}>
             + New Profile
           </button>
         )}
@@ -778,8 +782,8 @@ export default function ProfilesPage() {
                 Cancel
               </button>
               <button
-                className="btn btn-sm"
-                style={{ background: 'var(--surface-alt, #262a33)', color: 'var(--text)', border: '1px solid var(--border)' }}
+                className="btn btn-ghost"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 onClick={async () => {
                   try {
                     const res = await api.post<{ token: string }>('/vnc/token', {});
@@ -789,6 +793,10 @@ export default function ProfilesPage() {
                   }
                 }}
               >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="3" width="20" height="14" rx="2" />
+                  <path d="M8 21h8M12 17v4" />
+                </svg>
                 View Browser
               </button>
               <button
@@ -914,15 +922,15 @@ export default function ProfilesPage() {
               <thead>
                 <tr>
                   {[
-                    { key: 'name', label: 'Name' },
-                    { key: 'targetUrl', label: 'Target URL' },
-                    { key: 'kind', label: 'Kind' },
-                    { key: 'status', label: 'Status' },
-                    { key: 'lastScrapeAt', label: 'Last Scrape' },
+                    { key: 'name', label: 'Name', hide: '' },
+                    { key: 'targetUrl', label: 'Target URL', hide: 'hidden lg:table-cell' },
+                    { key: 'kind', label: 'Kind', hide: 'hidden sm:table-cell' },
+                    { key: 'status', label: 'Status', hide: '' },
+                    { key: 'lastScrapeAt', label: 'Last Scrape', hide: 'hidden md:table-cell' },
                   ].map((col) => (
                     <th
                       key={col.key}
-                      className="dt-th"
+                      className={`dt-th ${col.hide}`}
                       onClick={() => toggleSort(col.key)}
                     >
                       <span className="dt-th-inner">
@@ -950,62 +958,64 @@ export default function ProfilesPage() {
                         {p.name}
                       </Link>
                     </td>
-                    <td className="cell-muted max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap">
+                    <td className="cell-muted max-w-[240px] overflow-hidden text-ellipsis whitespace-nowrap hidden lg:table-cell">
                       {p.targetUrl}
                     </td>
-                    <td>
+                    <td className="hidden sm:table-cell">
                       <span className={`badge badge-${p.kind.toLowerCase()}`}>
                         {p.kind}
                       </span>
                     </td>
                     <td>
                       <span className={`status-dot status-${p.status.toLowerCase()}`} />
-                      {p.status}
+                      <span className="text-xs">{p.status.replace('_', ' ')}</span>
                     </td>
-                    <td className="cell-muted">
+                    <td className="cell-muted hidden md:table-cell whitespace-nowrap">
                       {p.lastScrapeAt
                         ? new Date(p.lastScrapeAt).toLocaleString('en-GB', {
                             timeZone: 'Asia/Bangkok',
                           })
                         : '—'}
                     </td>
-                    <td className="cell-actions">
-                      {canEdit && (
-                        <>
+                    <td>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {canEdit && (
+                          <>
+                            <button
+                              className="btn btn-sm btn-ghost"
+                              disabled={!!busyActions[p.id]}
+                              onClick={() => handleLogin(p)}
+                            >
+                              {busyActions[p.id] === 'login' ? '...' : 'Login'}
+                            </button>
+                            <button
+                              className="btn btn-sm btn-primary"
+                              disabled={!!busyActions[p.id]}
+                              onClick={() => handleAction(p.id, 'fetch', { period: 'today' })}
+                            >
+                              {busyActions[p.id] === 'fetch' ? '...' : 'Fetch'}
+                            </button>
+                            <button
+                              className="btn btn-sm btn-ghost hidden sm:inline-block"
+                              disabled={!!busyActions[p.id]}
+                              onClick={() => handleAction(p.id, 'fetch', { period: 'yesterday' })}
+                            >
+                              {busyActions[p.id] ? '...' : 'Yest.'}
+                            </button>
+                            <button className="btn btn-sm btn-ghost" onClick={() => openEdit(p)}>
+                              Edit
+                            </button>
+                          </>
+                        )}
+                        {canDelete && (
                           <button
-                            className="btn btn-sm"
-                            disabled={!!busyActions[p.id]}
-                            onClick={() => handleLogin(p)}
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleDelete(p.id, p.name)}
                           >
-                            {busyActions[p.id] === 'login' ? '...' : 'Login'}
+                            Del
                           </button>
-                          <button
-                            className="btn btn-sm btn-primary"
-                            disabled={!!busyActions[p.id]}
-                            onClick={() => handleAction(p.id, 'fetch', { period: 'today' })}
-                          >
-                            {busyActions[p.id] === 'fetch' ? '...' : 'Fetch'}
-                          </button>
-                          <button
-                            className="btn btn-sm"
-                            disabled={!!busyActions[p.id]}
-                            onClick={() => handleAction(p.id, 'fetch', { period: 'yesterday' })}
-                          >
-                            {busyActions[p.id] ? '...' : 'Yesterday'}
-                          </button>
-                          <button className="btn btn-sm" onClick={() => openEdit(p)}>
-                            Edit
-                          </button>
-                        </>
-                      )}
-                      {canDelete && (
-                        <button
-                          className="btn btn-sm btn-danger"
-                          onClick={() => handleDelete(p.id, p.name)}
-                        >
-                          Delete
-                        </button>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

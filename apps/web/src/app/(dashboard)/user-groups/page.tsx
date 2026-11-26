@@ -142,7 +142,7 @@ export default function UserGroupsPage() {
     return parts[parts.length - 1];
   }
 
-  if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><div className="spinner" /></div>;
 
   return (
     <div>

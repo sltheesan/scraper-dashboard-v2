@@ -130,7 +130,7 @@ export default function ActivityPage() {
       </div>
 
       {loading ? (
-        <div className="loading-screen"><div className="spinner" /></div>
+        <div className="flex items-center justify-center py-20"><div className="spinner" /></div>
       ) : entries.length === 0 ? (
         <div className="empty-state"><p>No activity logs found.</p></div>
       ) : (
@@ -140,26 +140,26 @@ export default function ActivityPage() {
               <thead>
                 <tr>
                   <th>Time</th>
-                  <th>Actor Type</th>
-                  <th>Actor</th>
+                  <th className="hidden sm:table-cell">Actor Type</th>
+                  <th className="hidden md:table-cell">Actor</th>
                   <th>Action</th>
-                  <th>Target</th>
-                  <th>Details</th>
+                  <th className="hidden lg:table-cell">Target</th>
+                  <th className="hidden lg:table-cell">Details</th>
                 </tr>
               </thead>
               <tbody>
                 {entries.map((e) => (
                   <tr key={e.id}>
-                    <td className="cell-muted whitespace-nowrap">{formatDate(e.createdAt)}</td>
-                    <td>
+                    <td className="cell-muted whitespace-nowrap text-xs">{formatDate(e.createdAt)}</td>
+                    <td className="hidden sm:table-cell">
                       <span className={`badge badge-actor-${e.actorType.toLowerCase()}`}>
                         {e.actorType}
                       </span>
                     </td>
-                    <td>{e.actor?.name || e.actorId || '—'}</td>
+                    <td className="hidden md:table-cell">{e.actor?.name || e.actorId || '—'}</td>
                     <td className="cell-name">{e.action}</td>
-                    <td>{e.target || '—'}</td>
-                    <td className="cell-muted max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap">
+                    <td className="hidden lg:table-cell">{e.target || '—'}</td>
+                    <td className="cell-muted max-w-[300px] overflow-hidden text-ellipsis whitespace-nowrap hidden lg:table-cell">
                       {e.details || '—'}
                     </td>
                   </tr>

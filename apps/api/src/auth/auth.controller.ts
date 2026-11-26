@@ -17,7 +17,8 @@ export class AuthController {
   }
 
   @Post('register')
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(JwtAuthGuard, ThrottlerGuard)
+  @ApiBearerAuth()
   @Throttle({ login: { ttl: 60_000, limit: 3 } })
   register(@Body() dto: RegisterDto) {
     return this.auth.register(dto.email, dto.password, dto.name);

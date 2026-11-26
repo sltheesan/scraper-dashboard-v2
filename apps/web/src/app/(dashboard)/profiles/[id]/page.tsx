@@ -195,7 +195,7 @@ export default function ProfileDetailPage() {
     return showCred[field] ? val : '••••••••';
   }
 
-  if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><div className="spinner" /></div>;
   if (!profile) return <div className="error-msg">Profile not found</div>;
 
   return (
@@ -208,7 +208,7 @@ export default function ProfileDetailPage() {
 
       {error && <div className="error-msg mb-4">{error}</div>}
 
-      <div className="detail-grid">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         <div className="card">
           <div className="detail-header">
             <div>
@@ -409,7 +409,7 @@ export default function ProfileDetailPage() {
             </div>
           ) : fetchResult.parsed ? (
             <>
-              <div className="fetch-result-metrics">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {Object.entries(METRIC_LABELS).map(([key, label]) => (
                   <div key={key} className="fetch-metric">
                     <div className="fetch-metric-label">{label}</div>
@@ -463,26 +463,26 @@ export default function ProfileDetailPage() {
               <thead>
                 <tr>
                   <th>Date</th>
-                  <th>New Reg.</th>
-                  <th>New Dep.</th>
-                  <th>Total Dep.</th>
-                  <th>Dep. Amount</th>
-                  <th>Total Wdr.</th>
-                  <th>Wdr. Amount</th>
-                  <th>Scraped At</th>
+                  <th className="hidden sm:table-cell">New Reg.</th>
+                  <th className="hidden sm:table-cell">New Dep.</th>
+                  <th className="hidden md:table-cell">Total Dep.</th>
+                  <th className="text-right">Dep. Amt</th>
+                  <th className="hidden md:table-cell">Total Wdr.</th>
+                  <th className="text-right">Wdr. Amt</th>
+                  <th className="hidden lg:table-cell">Scraped At</th>
                 </tr>
               </thead>
               <tbody>
                 {scrapes.map((s) => (
                   <tr key={s.id}>
-                    <td className="cell-name">{s.reportDateString}</td>
-                    <td>{s.newRegistrationCount ?? '—'}</td>
-                    <td>{s.newDepositCount ?? '—'}</td>
-                    <td>{s.totalDepositCount ?? '—'}</td>
-                    <td>{formatAmount(s.totalDepositAmount)}</td>
-                    <td>{s.totalWithdrawalCount ?? '—'}</td>
-                    <td>{formatAmount(s.totalWithdrawalAmount)}</td>
-                    <td className="cell-muted">{formatDate(s.scrapedAt)}</td>
+                    <td className="cell-name whitespace-nowrap">{s.reportDateString}</td>
+                    <td className="hidden sm:table-cell">{s.newRegistrationCount ?? '—'}</td>
+                    <td className="hidden sm:table-cell">{s.newDepositCount ?? '—'}</td>
+                    <td className="hidden md:table-cell">{s.totalDepositCount ?? '—'}</td>
+                    <td className="text-right tabular-nums">{formatAmount(s.totalDepositAmount)}</td>
+                    <td className="hidden md:table-cell">{s.totalWithdrawalCount ?? '—'}</td>
+                    <td className="text-right tabular-nums">{formatAmount(s.totalWithdrawalAmount)}</td>
+                    <td className="cell-muted hidden lg:table-cell">{formatDate(s.scrapedAt)}</td>
                   </tr>
                 ))}
               </tbody>

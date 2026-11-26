@@ -9,6 +9,7 @@ export default {
         surface: 'var(--surface)',
         'surface-hover': 'var(--surface-hover)',
         border: 'var(--border)',
+        text: 'var(--text)',
         muted: 'var(--muted)',
         accent: 'var(--accent)',
         'accent-hover': 'var(--accent-hover)',

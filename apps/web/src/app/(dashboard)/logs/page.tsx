@@ -74,14 +74,14 @@ export default function LogsPage() {
   }
 
   return (
-    <div className="logs-page">
-      <div className="logs-toolbar">
-        <div className="logs-status">
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 52px - 56px)' }}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3 shrink-0">
+        <div className="flex items-center text-sm">
           <span className={`status-dot ${connected ? 'status-logged_in' : 'status-error'}`} />
           {connected ? 'Connected' : 'Disconnected'}
           <span className="cell-muted ml-3">{logs.length} events</span>
         </div>
-        <div className="logs-controls">
+        <div className="flex gap-2">
           <button
             className={`btn btn-sm ${autoScroll ? 'btn-primary' : 'btn-ghost'}`}
             onClick={() => {

@@ -112,7 +112,7 @@ export default function UsersPage() {
     }
   }
 
-  if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><div className="spinner" /></div>;
 
   return (
     <div>
@@ -167,10 +167,10 @@ export default function UsersPage() {
             <thead>
               <tr>
                 <th>Name</th>
-                <th>Email</th>
-                <th>Group</th>
+                <th className="hidden sm:table-cell">Email</th>
+                <th className="hidden md:table-cell">Group</th>
                 <th>Status</th>
-                <th>Last Login</th>
+                <th className="hidden lg:table-cell">Last Login</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -184,8 +184,8 @@ export default function UsersPage() {
                       {u.name}
                       {isSuper && <span className="badge badge-active ml-2 text-[10px]">Super Admin</span>}
                     </td>
-                    <td>{u.email}</td>
-                    <td>
+                    <td className="hidden sm:table-cell">{u.email}</td>
+                    <td className="hidden md:table-cell">
                       {isSuper ? (
                         <span className="text-muted italic">All privileges</span>
                       ) : (
@@ -207,7 +207,7 @@ export default function UsersPage() {
                         {u.isActive ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="cell-muted">{formatDate(u.lastLoginAt)}</td>
+                    <td className="cell-muted hidden lg:table-cell">{formatDate(u.lastLoginAt)}</td>
                     <td className="cell-actions">
                       {!isSelf && !isSuper && hasPrivilege('users.edit') && (
                         <button

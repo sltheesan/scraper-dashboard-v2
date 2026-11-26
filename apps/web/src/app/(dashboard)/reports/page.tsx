@@ -52,6 +52,12 @@ function fmtCompact(n: number, isAmount = false): string {
   return isAmount ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : n.toLocaleString('en-US');
 }
 
+function fmtCurrency(n: number): string {
+  if (Math.abs(n) >= 1_000_000) return '฿' + (n / 1_000_000).toFixed(1) + 'M';
+  if (Math.abs(n) >= 10_000) return '฿' + (n / 1_000).toFixed(1) + 'K';
+  return '฿' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -444,11 +450,11 @@ export default function ReportsPage() {
             {/* Net Flow — hero */}
             <div className={`col-span-2 md:col-span-1 p-3 rounded-sm border ${netFlow >= 0 ? 'bg-success/[0.06] border-success/20' : 'bg-error/[0.06] border-error/20'}`}>
               <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Net Flow</div>
-              <div className={`text-[22px] font-bold mt-0.5 ${netFlow >= 0 ? 'text-success' : 'text-error'}`}>
-                {netFlow >= 0 ? '+' : ''}{fmtCompact(netFlow, true)}
+              <div className={`text-[22px] font-bold mt-0.5 tabular-nums ${netFlow >= 0 ? 'text-success' : 'text-error'}`}>
+                {netFlow >= 0 ? '+' : ''}{fmtCurrency(netFlow)}
               </div>
-              <div className="text-[10px] text-muted mt-0.5">
-                {fmtCompact(netFlow / dayCount, true)}/day avg
+              <div className="text-[10px] text-muted mt-0.5 tabular-nums">
+                {fmtCurrency(netFlow / dayCount)}/day avg
               </div>
             </div>
 
@@ -466,8 +472,8 @@ export default function ReportsPage() {
                   className={`p-3 rounded-sm bg-surface border border-border cursor-pointer transition-all ${isActive ? 'opacity-100 ring-2 ring-accent ring-inset' : 'opacity-85 hover:opacity-100'}`}
                 >
                   <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">{m.short}</div>
-                  <div className="text-xl font-bold mt-0.5">{fmtCompact(total, m.isAmount)}</div>
-                  <div className="text-[10px] text-muted mt-px">{fmtCompact(avg, m.isAmount)}/day</div>
+                  <div className="text-xl font-bold mt-0.5 tabular-nums">{m.isAmount ? fmtCurrency(total) : fmtCompact(total)}</div>
+                  <div className="text-[10px] text-muted mt-px tabular-nums">{m.isAmount ? fmtCurrency(avg) : fmtCompact(avg)}/day</div>
                   <div className="mt-1.5">
                     <Sparkline values={vals} color={sparkColor} height={24} />
                   </div>
@@ -582,7 +588,7 @@ export default function ReportsPage() {
                       <tr key={p.id}>
                         <td className="cell-muted">{idx + 1}</td>
                         <td className="cell-name">{p.name}</td>
-                        <td><span className={`badge ${p.kind === 'CGAMING' ? 'badge-success' : 'badge-info'}`}>{p.kind}</span></td>
+                        <td><span className={`badge badge-${p.kind.toLowerCase()}`}>{p.kind}</span></td>
                         <td className="text-center">{p.days}</td>
                         {METRICS.map((m) => (
                           <td key={m.key} className={`text-right tabular-nums ${best[m.key] ? 'font-bold text-success' : ''}`}>
@@ -629,7 +635,7 @@ export default function ReportsPage() {
                     <tr key={r.id}>
                       <td className="cell-muted whitespace-nowrap">{formatDisplayDate(r.reportDate)}</td>
                       <td className="cell-name">{r.profile.name}</td>
-                      <td><span className={`badge ${r.profile.kind === 'CGAMING' ? 'badge-success' : 'badge-info'}`}>{r.profile.kind}</span></td>
+                      <td><span className={`badge badge-${r.profile.kind.toLowerCase()}`}>{r.profile.kind}</span></td>
                       {METRICS.map((m) => <td key={m.key} className="text-right tabular-nums">{fmt(r[m.key], m.isAmount)}</td>)}
                     </tr>
                   ))}

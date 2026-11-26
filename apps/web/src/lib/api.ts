@@ -26,6 +26,12 @@ export async function apiFetch<T = any>(
   });
 
   if (!res.ok) {
+    if (res.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('token');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login';
+      }
+    }
     const body = await res.json().catch(() => ({}));
     throw new ApiError(res.status, body.message || res.statusText);
   }

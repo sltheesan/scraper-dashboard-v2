@@ -53,6 +53,12 @@ function fmtCompact(n: number, isAmount = false): string {
   return isAmount ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : n.toLocaleString('en-US');
 }
 
+function fmtCurrency(n: number): string {
+  if (Math.abs(n) >= 1_000_000) return '฿' + (n / 1_000_000).toFixed(1) + 'M';
+  if (Math.abs(n) >= 10_000) return '฿' + (n / 1_000).toFixed(1) + 'K';
+  return '฿' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 function fmt(n: number, isAmount = false): string {
   return isAmount ? n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : n.toLocaleString('en-US');
 }
@@ -182,12 +188,14 @@ export default function DashboardHome() {
       .sort((a, b) => (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99) || a.name.localeCompare(b.name));
   }, [profiles, todayScrapes]);
 
-  if (loading) return <div className="loading-screen"><div className="spinner" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><div className="spinner" /></div>;
 
   if (profiles.length === 0 && !hasPrivilege('profiles.view')) {
     return (
       <div className="mt-10 text-center text-muted">
-        <p>Welcome to Scraper Dashboard v2.</p>
+        <div className="text-4xl mb-3 opacity-20">◈</div>
+        <p className="text-base font-semibold mb-1">Welcome to Scraper Dashboard</p>
+        <p className="text-sm">Your workspace is ready. Contact an admin for access.</p>
       </div>
     );
   }
@@ -204,8 +212,8 @@ export default function DashboardHome() {
               : 'bg-[rgba(239,68,68,0.06)] border-[rgba(239,68,68,0.2)]'
           }`}>
             <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Today Net Flow</div>
-            <div className={`text-2xl font-bold mt-0.5 ${todayTotals.net >= 0 ? 'text-success' : 'text-error'}`}>
-              {todayTotals.net >= 0 ? '+' : ''}{fmtCompact(todayTotals.net, true)}
+            <div className={`text-2xl font-bold mt-0.5 tabular-nums ${todayTotals.net >= 0 ? 'text-success' : 'text-error'}`}>
+              {todayTotals.net >= 0 ? '+' : ''}{fmtCurrency(todayTotals.net)}
             </div>
             {weekDaily.length > 1 && (
               <div className="mt-1.5">
@@ -217,8 +225,8 @@ export default function DashboardHome() {
           {/* Deposits */}
           <div className="p-4 rounded-sm bg-surface border border-border">
             <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Deposits</div>
-            <div className="text-xl font-bold mt-0.5">{fmtCompact(todayTotals.dep, true)}</div>
-            <div className="text-[11px] text-muted mt-0.5">{fmt(todayTotals.depCount)} txns</div>
+            <div className="text-xl font-bold mt-0.5 tabular-nums">{fmtCurrency(todayTotals.dep)}</div>
+            <div className="text-[11px] text-muted mt-0.5 tabular-nums">{fmt(todayTotals.depCount)} txns</div>
             {weekDaily.length > 1 && (
               <div className="mt-1"><Sparkline values={weekDaily.map(([, d]) => d.dep)} color="#3987e5" height={20} /></div>
             )}
@@ -227,8 +235,8 @@ export default function DashboardHome() {
           {/* Withdrawals */}
           <div className="p-4 rounded-sm bg-surface border border-border">
             <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Withdrawals</div>
-            <div className="text-xl font-bold mt-0.5">{fmtCompact(todayTotals.wd, true)}</div>
-            <div className="text-[11px] text-muted mt-0.5">{fmt(todayTotals.wdCount)} txns</div>
+            <div className="text-xl font-bold mt-0.5 tabular-nums">{fmtCurrency(todayTotals.wd)}</div>
+            <div className="text-[11px] text-muted mt-0.5 tabular-nums">{fmt(todayTotals.wdCount)} txns</div>
             {weekDaily.length > 1 && (
               <div className="mt-1"><Sparkline values={weekDaily.map(([, d]) => d.wd)} color="#d95926" height={20} /></div>
             )}
@@ -358,15 +366,15 @@ export default function DashboardHome() {
                         {todayScrapes.length > 0 && (
                           <>
                             <td className="text-right tabular-nums text-xs hidden md:table-cell">
-                              {p.scrape ? fmtCompact(dep, true) : <span className="text-muted">—</span>}
+                              {p.scrape ? fmtCurrency(dep) : <span className="text-muted">—</span>}
                             </td>
                             <td className="text-right tabular-nums text-xs hidden md:table-cell">
-                              {p.scrape ? fmtCompact(wd, true) : <span className="text-muted">—</span>}
+                              {p.scrape ? fmtCurrency(wd) : <span className="text-muted">—</span>}
                             </td>
                             <td className={`text-right tabular-nums text-xs ${p.scrape ? 'font-semibold' : ''} ${
                               p.scrape ? (net >= 0 ? 'text-success' : 'text-error') : 'text-muted'
                             }`}>
-                              {p.scrape ? `${net >= 0 ? '+' : ''}${fmtCompact(net, true)}` : '—'}
+                              {p.scrape ? `${net >= 0 ? '+' : ''}${fmtCurrency(net)}` : '—'}
                             </td>
                           </>
                         )}

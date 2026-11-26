@@ -33,9 +33,15 @@ async function bootstrap() {
     .build();
   SwaggerModule.setup('api/docs', app, SwaggerModule.createDocument(app, config));
 
+  app.enableShutdownHooks();
+
   const port = process.env.PORT || 4000;
   await app.listen(port, '0.0.0.0');
   console.log(`API running on http://localhost:${port}`);
 }
+
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection:', reason);
+});
 
 bootstrap();

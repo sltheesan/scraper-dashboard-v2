@@ -46,18 +46,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
-    const saved = localStorage.getItem('theme') as 'dark' | 'light' | null;
-    if (saved) {
-      setTheme(saved);
-      document.documentElement.setAttribute('data-theme', saved);
-    }
+    try {
+      const saved = localStorage.getItem('theme') as 'dark' | 'light' | null;
+      if (saved) {
+        setTheme(saved);
+        document.documentElement.setAttribute('data-theme', saved);
+      }
+    } catch {}
   }, []);
 
   const toggleTheme = useCallback(() => {
     const next = theme === 'dark' ? 'light' : 'dark';
     setTheme(next);
     document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
+    try { localStorage.setItem('theme', next); } catch {}
   }, [theme]);
 
   useEffect(() => {
