@@ -14,6 +14,8 @@ COPY apps/web ./apps/web
 COPY apps/api ./apps/api
 
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
+
+ENV INTERNAL_API_URL=http://api:4000
 RUN npm run build -w @scraper/web
 
 # ---------------------------------------------------------------------------
