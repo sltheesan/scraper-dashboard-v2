@@ -1,0 +1,48 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: scraper-v2-api
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4000:4000"
+      - "127.0.0.1:6080:6080"
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      HEADLESS: "true"
+      BROWSER_CHANNEL: ""
+      TZ: Asia/Bangkok
+    volumes:
+      - api-profiles:/app/apps/api/profiles
+    networks:
+      - scraper-v2
+    shm_size: "2gb"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: scraper-v2-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_ENV: production
+      INTERNAL_API_URL: "http://api:4000"
+      HOSTNAME: "0.0.0.0"
+      PORT: "3000"
+    networks:
+      - scraper-v2
+    depends_on:
+      - api
+
+volumes:
+  api-profiles:
+
+networks:
+  scraper-v2:
+    driver: bridge
