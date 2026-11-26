@@ -787,7 +787,7 @@ export default function ProfilesPage() {
                 onClick={async () => {
                   try {
                     const res = await api.post<{ token: string }>('/vnc/token', { profileName: loginSession?.name });
-                    window.open(`/vnc/vnc.html?token=${res.token}&autoconnect=true&resize=scale`, '_blank');
+                    window.open(`/vnc/vnc.html?token=${res.token}&autoconnect=true&resize=scale&path=vnc/websockify`, '_blank');
                   } catch (err: any) {
                     setError(err.message || 'Failed to open VNC session');
                   }
