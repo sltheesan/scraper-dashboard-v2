@@ -1,0 +1,124 @@
+// Scraper Dashboard v2 — schema for "converted db.json"
+// Collections match the v2 backup keys: users, profiles, profileCredentials,
+// scrapes, settings, activityLogs.
+//
+// Changes vs. the old Mongo (Mongoose) schema:
+//  - _id (ObjectId)  -> id (cuid string). __v dropped.
+//  - Enum values are UPPERCASE (cgaming -> CGAMING, logged_in -> LOGGED_IN, admin -> ADMIN).
+//  - schedulesettings + telegramsettings -> one key/value `settings` table
+//      key "scheduler" -> { fetch, refresh, platforms }
+//      key "telegram"  -> { restricted, allowedChatIds, allowedUsernames,
+//                           sendImage, sendText, alertChatIds, alertChatId }
+//  - New in v2 (no Mongo equivalent): users, profileCredentials.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // change to your v2 provider if different
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+enum ProfileKind {
+  CGAMING
+  ZOOMWLB
+}
+
+enum ProfileStatus {
+  LOGGED_IN
+  LOGGED_OUT
+}
+
+enum ActorType {
+  ADMIN
+  TELEGRAM
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         Role      @default(USER)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model Profile {
+  id                String        @id @default(cuid())
+  name              String        @unique
+  kind              ProfileKind
+  loginUrl          String
+  targetUrl         String
+  buttonSelector    String        @default("")
+  status            ProfileStatus @default(LOGGED_OUT)
+  lastLoginAt       DateTime?
+  lastScrapeAt      DateTime?
+  proxy             String        @default("")
+  notes             String        @default("")
+  dataFields        Json          @default("[]")
+  userDataDir       String        @default("")
+  refreshIntervalMs Int           @default(300000)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  credentials ProfileCredential[]
+  scrapes     Scrape[]
+}
+
+// Present (empty) in the v2 backup; fields not visible there, kept minimal.
+model ProfileCredential {
+  id        String   @id @default(cuid())
+  profileId String
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Scrape {
+  id               String      @id @default(cuid())
+  profileId        String
+  profile          Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  kind             ProfileKind
+  reportDate       DateTime
+  reportDateString String
+  scrapedAt        DateTime
+  data             Json        // normalized numbers: newRegistrationCount, newDepositCount, totalDeposit*, totalWithdrawal*
+  raw              Json        // scraped strings as shown on the site
+  tables           Json        // [{ index, id, className, headers, rowCount, rows, frameUrl }]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@unique([profileId, reportDate])
+  @@index([kind, reportDate])
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique // "scheduler" | "telegram"
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        String    @id @default(cuid())
+  actorType ActorType
+  actor     String
+  action    String
+  target    String    @default("")
+  details   String    @default("")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([createdAt])
+  @@index([action])
+}

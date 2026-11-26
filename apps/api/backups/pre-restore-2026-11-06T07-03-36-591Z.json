@@ -1,0 +1,39 @@
+{
+  "version": 2,
+  "timestamp": "2026-11-06T07:03:36.590Z",
+  "collections": {
+    "users": [
+      {
+        "id": "cmw3eyy0v0000wnrooaj4tvbx",
+        "email": "admin@200m.co",
+        "name": "Admin",
+        "passwordHash": "$2b$12$hpI2BlifWLcaladIeJx6guCI11JvVQwIR4yJM9xnRymRJ5Rm6J6Je",
+        "role": "ADMIN",
+        "isActive": true,
+        "lastLoginAt": "2026-11-05T11:05:33.279Z",
+        "createdAt": "2026-11-05T10:39:48.409Z",
+        "updatedAt": "2026-11-05T11:05:33.282Z"
+      }
+    ],
+    "profiles": [],
+    "profileCredentials": [],
+    "scrapes": [],
+    "settings": [],
+    "activityLogs": [
+      {
+        "id": "cmw4m66k90001wn106nq3w2g5",
+        "actorType": "USER",
+        "actorId": "cmw3eyy0v0000wnrooaj4tvbx",
+        "actorLabel": "",
+        "action": "profile.delete",
+        "target": "A200M",
+        "details": "",
+        "meta": null,
+        "createdAt": "2026-11-06T06:49:09.560Z",
+        "updatedAt": null
+      }
+    ],
+    "backupImports": [],
+    "legacyDocuments": []
+  }
+}

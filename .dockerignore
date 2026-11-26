@@ -1,0 +1,11 @@
+node_modules
+.next
+dist
+.turbo
+.git
+.env
+.env.*
+*.log
+profiles/
+DB/
+backups/
