@@ -786,10 +786,10 @@ export default function ProfilesPage() {
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                 onClick={async () => {
                   try {
-                    const res = await api.post<{ token: string }>('/vnc/token', {});
+                    const res = await api.post<{ token: string }>('/vnc/token', { profileName: loginSession?.name });
                     window.open(`/vnc/vnc.html?token=${res.token}&autoconnect=true&resize=scale`, '_blank');
-                  } catch {
-                    setError('Failed to open VNC session');
+                  } catch (err: any) {
+                    setError(err.message || 'Failed to open VNC session');
                   }
                 }}
               >

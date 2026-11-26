@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/auth-context';
+import { api } from '@/lib/api';
 
 const NAV_ITEMS = [
   { href: '/', label: 'Dashboard', icon: '▦' },
@@ -38,6 +39,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [clock, setClock] = useState('');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [vncSession, setVncSession] = useState<{ active: boolean; userName?: string; profileName?: string; isOwner?: boolean } | null>(null);
+  const [vncEnding, setVncEnding] = useState(false);
 
   useEffect(() => {
     setClock(formatBangkokTime());
@@ -67,6 +70,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace('/login');
     }
   }, [loading, user, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    function pollVnc() {
+      api.get<{ active: boolean; userName?: string; profileName?: string; isOwner?: boolean }>('/vnc/session')
+        .then(setVncSession)
+        .catch(() => {});
+    }
+    pollVnc();
+    const id = setInterval(pollVnc, 10_000);
+    return () => clearInterval(id);
+  }, [user]);
+
+  async function endVncSession() {
+    setVncEnding(true);
+    try {
+      await api.post('/vnc/end-session', {});
+      setVncSession({ active: false });
+    } catch {}
+    setVncEnding(false);
+  }
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -192,6 +216,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
+        {vncSession?.active && (
+          <div className="mx-4 md:mx-7 mt-3 flex items-center gap-3 bg-warning/10 border border-warning/30 rounded-sm px-4 py-2.5 text-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-warning shrink-0">
+              <rect x="2" y="3" width="20" height="14" rx="2" /><path d="M8 21h8M12 17v4" />
+            </svg>
+            <span className="flex-1 min-w-0">
+              <strong>{vncSession.userName}</strong> is using VNC
+              {vncSession.profileName && <> for <strong>{vncSession.profileName}</strong></>}
+            </span>
+            <button
+              className="btn btn-sm btn-danger shrink-0"
+              disabled={vncEnding}
+              onClick={endVncSession}
+            >
+              {vncEnding ? 'Ending...' : 'End VNC Session'}
+            </button>
+          </div>
+        )}
         <div className="flex-1 p-4 md:p-7">{children}</div>
       </main>
     </div>
