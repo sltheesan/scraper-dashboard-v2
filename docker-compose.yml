@@ -6,7 +6,7 @@ services:
     container_name: scraper-v2-api
     restart: unless-stopped
     ports:
-      - "127.0.0.1:4000:4000"
+      - "127.0.0.1:4001:4000"
       - "127.0.0.1:6090:6080"
     env_file:
       - .env.production
@@ -29,7 +29,7 @@ services:
     container_name: scraper-v2-web
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3001:3000"
     environment:
       NODE_ENV: production
       INTERNAL_API_URL: "http://api:4000"
