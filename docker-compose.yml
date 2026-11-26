@@ -7,7 +7,7 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:4000:4000"
-      - "127.0.0.1:6080:6080"
+      - "127.0.0.1:6090:6080"
     env_file:
       - .env.production
     environment:
