@@ -1379,6 +1379,103 @@ tr:hover td { background: var(--surface-hover); }
   font-size: 13px;
 }
 
+/* ─── DataTable ─────────────────────────────────────── */
+
+.dt-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.dt-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.dt-count {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.dt-page-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  flex-direction: row;
+}
+
+.dt-page-size select {
+  padding: 4px 8px;
+  font-size: 13px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.dt-th {
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.dt-th:hover {
+  color: var(--text);
+}
+
+.dt-th-inner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dt-sort-icon {
+  font-size: 10px;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+
+.dt-th:hover .dt-sort-icon {
+  opacity: 0.8;
+}
+
+.dt-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding: 10px 0;
+}
+
+.dt-range {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dt-pager {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dt-pager .btn {
+  min-width: 32px;
+  text-align: center;
+  padding: 5px 8px;
+}
+
+.dt-pager-gap {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 0 4px;
+}
+
 /* ─── Responsive ────────────────────────────────────── */
 
 @media (max-width: 768px) {

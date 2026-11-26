@@ -96,6 +96,9 @@ export default function ProfilesPage() {
   const [kindFilter, setKindFilter] = useState<'' | 'CGAMING' | 'ZOOMWLB' | 'ONEOPSPORTAL'>('');
   const [statusFilter, setStatusFilter] = useState('');
   const [page, setPage] = useState(0);
+  const [sortKey, setSortKey] = useState<string>('name');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
 
   async function loadProfiles() {
     try {
@@ -111,6 +114,15 @@ export default function ProfilesPage() {
   useEffect(() => {
     loadProfiles();
   }, []);
+
+  function toggleSort(key: string) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('asc');
+    }
+  }
 
   const filtered = useMemo(() => {
     let list = profiles;
@@ -128,9 +140,46 @@ export default function ProfilesPage() {
     return list;
   }, [profiles, search, kindFilter, statusFilter]);
 
-  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const sorted = useMemo(() => {
+    const list = [...filtered];
+    const dir = sortDir === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      let va: any;
+      let vb: any;
+      switch (sortKey) {
+        case 'name':
+          va = a.name.toLowerCase();
+          vb = b.name.toLowerCase();
+          break;
+        case 'kind':
+          va = a.kind;
+          vb = b.kind;
+          break;
+        case 'status':
+          va = a.status;
+          vb = b.status;
+          break;
+        case 'lastScrapeAt':
+          va = a.lastScrapeAt || '';
+          vb = b.lastScrapeAt || '';
+          break;
+        case 'targetUrl':
+          va = a.targetUrl.toLowerCase();
+          vb = b.targetUrl.toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+      if (va < vb) return -1 * dir;
+      if (va > vb) return 1 * dir;
+      return 0;
+    });
+    return list;
+  }, [filtered, sortKey, sortDir]);
+
+  const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const safePage = Math.min(page, pageCount - 1);
-  const paged = filtered.slice(safePage * PAGE_SIZE, (safePage + 1) * PAGE_SIZE);
+  const paged = sorted.slice(safePage * pageSize, (safePage + 1) * pageSize);
 
   useEffect(() => { setPage(0); }, [search, kindFilter, statusFilter]);
 
@@ -224,7 +273,7 @@ export default function ProfilesPage() {
     try {
       const [result, cred] = await Promise.all([
         api.post<{ ok: boolean; alreadyOpen: boolean }>(`/profiles/${profile.id}/login`, {}),
-        api.get<{ username: string; password: string; pin: string; otpEmail: string }>(
+        api.get<{ username: string; password: string; pin: string; otpEmail: string; totpSecret: string }>(
           `/profiles/${profile.id}/credentials`,
         ).catch(() => null),
       ]);
@@ -828,21 +877,58 @@ export default function ProfilesPage() {
           {canEdit && <p>Click &quot;+ New Profile&quot; to create one.</p>}
         </div>
       ) : (
-        <>
-          <div className="table-wrap">
+        <div className="dt-container">
+          <div className="dt-info-bar">
+            <span className="dt-count">
+              {sorted.length === profiles.length
+                ? `${profiles.length} profiles`
+                : `${sorted.length} of ${profiles.length} profiles`}
+            </span>
+            <label className="dt-page-size">
+              Show
+              <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(0); }}>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </label>
+          </div>
+          <div className="table-wrap table-sticky-header">
             <table>
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Target URL</th>
-                  <th>Kind</th>
-                  <th>Status</th>
-                  <th>Last Scrape</th>
+                  {[
+                    { key: 'name', label: 'Name' },
+                    { key: 'targetUrl', label: 'Target URL' },
+                    { key: 'kind', label: 'Kind' },
+                    { key: 'status', label: 'Status' },
+                    { key: 'lastScrapeAt', label: 'Last Scrape' },
+                  ].map((col) => (
+                    <th
+                      key={col.key}
+                      className="dt-th"
+                      onClick={() => toggleSort(col.key)}
+                    >
+                      <span className="dt-th-inner">
+                        {col.label}
+                        <span className="dt-sort-icon">
+                          {sortKey === col.key ? (sortDir === 'asc' ? '▲' : '▼') : '⇅'}
+                        </span>
+                      </span>
+                    </th>
+                  ))}
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {paged.map((p) => (
+                {paged.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="text-center py-8 text-[var(--muted)]">
+                      No profiles match your filters.
+                    </td>
+                  </tr>
+                ) : paged.map((p) => (
                   <tr key={p.id}>
                     <td className="cell-name">
                       <Link href={`/profiles/${p.id}`} className="text-inherit no-underline">
@@ -912,28 +998,50 @@ export default function ProfilesPage() {
             </table>
           </div>
 
-          {pageCount > 1 && (
-            <div className="pagination">
-              <button
-                className="btn btn-sm btn-ghost"
-                disabled={safePage === 0}
-                onClick={() => setPage(safePage - 1)}
-              >
-                Prev
+          <div className="dt-footer">
+            <span className="dt-range">
+              {sorted.length > 0
+                ? `${safePage * pageSize + 1}–${Math.min((safePage + 1) * pageSize, sorted.length)} of ${sorted.length}`
+                : '0 results'}
+            </span>
+            <div className="dt-pager">
+              <button className="btn btn-sm btn-ghost" disabled={safePage === 0} onClick={() => setPage(0)}>
+                «
               </button>
-              <span className="pagination-info">
-                Page {safePage + 1} of {pageCount} ({filtered.length} profiles)
-              </span>
-              <button
-                className="btn btn-sm btn-ghost"
-                disabled={safePage >= pageCount - 1}
-                onClick={() => setPage(safePage + 1)}
-              >
-                Next
+              <button className="btn btn-sm btn-ghost" disabled={safePage === 0} onClick={() => setPage(safePage - 1)}>
+                ‹
+              </button>
+              {Array.from({ length: pageCount }, (_, i) => i)
+                .filter((i) => i === 0 || i === pageCount - 1 || Math.abs(i - safePage) <= 1)
+                .reduce<(number | 'gap')[]>((acc, i) => {
+                  if (acc.length && typeof acc[acc.length - 1] === 'number' && (i - (acc[acc.length - 1] as number)) > 1) {
+                    acc.push('gap');
+                  }
+                  acc.push(i);
+                  return acc;
+                }, [])
+                .map((item, idx) =>
+                  item === 'gap' ? (
+                    <span key={`gap-${idx}`} className="dt-pager-gap">…</span>
+                  ) : (
+                    <button
+                      key={item}
+                      className={`btn btn-sm ${item === safePage ? 'btn-primary' : 'btn-ghost'}`}
+                      onClick={() => setPage(item as number)}
+                    >
+                      {(item as number) + 1}
+                    </button>
+                  ),
+                )}
+              <button className="btn btn-sm btn-ghost" disabled={safePage >= pageCount - 1} onClick={() => setPage(safePage + 1)}>
+                ›
+              </button>
+              <button className="btn btn-sm btn-ghost" disabled={safePage >= pageCount - 1} onClick={() => setPage(pageCount - 1)}>
+                »
               </button>
             </div>
-          )}
-        </>
+          </div>
+        </div>
       )}
     </div>
   );
