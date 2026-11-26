@@ -18,6 +18,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 import { DailyCaptureModule } from './daily-capture/daily-capture.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { BackupModule } from './backup/backup.module';
+import { VncModule } from './vnc/vnc.module';
 import { AppBootstrapService } from './app-bootstrap.service';
 
 @Module({
@@ -47,6 +48,7 @@ import { AppBootstrapService } from './app-bootstrap.service';
     DailyCaptureModule,
     TelegramModule,
     BackupModule,
+    VncModule,
   ],
   providers: [AppBootstrapService],
 })

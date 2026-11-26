@@ -709,7 +709,8 @@ export default function ProfilesPage() {
             )}
 
             <ol className="m-0 pl-5 flex flex-col gap-1.5 text-muted text-[13px]">
-              <li>Complete the login in the browser window on the server.</li>
+              <li>Click <strong>View Browser</strong> to open the remote browser window.</li>
+              <li>Complete the login in the browser.</li>
               <li>Come back here and click <strong>Save session</strong>.</li>
             </ol>
             {loginSession.alreadyOpen && (
@@ -775,6 +776,20 @@ export default function ProfilesPage() {
                 onClick={handleLoginCancel}
               >
                 Cancel
+              </button>
+              <button
+                className="btn btn-sm"
+                style={{ background: 'var(--surface-alt, #262a33)', color: 'var(--text)', border: '1px solid var(--border)' }}
+                onClick={async () => {
+                  try {
+                    const res = await api.post<{ token: string }>('/vnc/token', {});
+                    window.open(`/vnc/vnc.html?token=${res.token}&autoconnect=true&resize=scale`, '_blank');
+                  } catch {
+                    setError('Failed to open VNC session');
+                  }
+                }}
+              >
+                View Browser
               </button>
               <button
                 className="btn btn-primary"
