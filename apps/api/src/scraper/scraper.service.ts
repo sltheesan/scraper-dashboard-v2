@@ -6,7 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { chromium, BrowserContext, Page, Frame } from 'playwright';
 import { join } from 'path';
-import { mkdir, readFile, writeFile } from 'fs/promises';
+import { mkdir, readFile, writeFile, rm } from 'fs/promises';
 import { ProfileKind } from '@scraper/database';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -339,6 +339,11 @@ export class ScraperService implements OnModuleDestroy {
 
     const userDataDir = this.profileDir(profile);
     await mkdir(userDataDir, { recursive: true });
+
+    for (const lock of ['SingletonLock', 'SingletonSocket', 'SingletonCookie']) {
+      await rm(join(userDataDir, lock), { force: true }).catch(() => {});
+    }
+
     const channel = this.config.get('BROWSER_CHANNEL', 'chrome');
 
     const context = await chromium.launchPersistentContext(userDataDir, {
