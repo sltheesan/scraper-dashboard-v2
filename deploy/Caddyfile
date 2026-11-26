@@ -2,24 +2,13 @@
 # Place at /etc/caddy/Caddyfile on the VPS, then: systemctl reload caddy
 
 scraper-v2.200m.tech {
-	# Frontend (Next.js)
-	reverse_proxy localhost:3001
-
-	# VNC WebSocket proxy — requires upgrade for noVNC
-	handle /vnc/* {
-		reverse_proxy localhost:6090 {
-			header_up X-Forwarded-Proto {scheme}
-		}
-	}
-
-	# WebSocket upgrade support for VNC
-	@websocket {
-		header Connection *Upgrade*
-		header Upgrade websocket
-	}
-	handle @websocket {
+	# VNC: strip /vnc prefix, proxy to noVNC/websockify (handles WebSocket automatically)
+	handle_path /vnc/* {
 		reverse_proxy localhost:6090
 	}
+
+	# Frontend (Next.js) — catches everything else
+	reverse_proxy localhost:3001
 }
 
 # Keep v1 running alongside
