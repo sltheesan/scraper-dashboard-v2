@@ -8,6 +8,7 @@ export default {
         bg: 'var(--bg)',
         surface: 'var(--surface)',
         'surface-hover': 'var(--surface-hover)',
+        'surface-alt': 'var(--surface-alt)',
         border: 'var(--border)',
         text: 'var(--text)',
         muted: 'var(--muted)',
