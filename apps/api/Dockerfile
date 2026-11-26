@@ -19,7 +19,7 @@ RUN npm run build -w @scraper/api
 FROM mcr.microsoft.com/playwright:v1.64.0-noble AS runner
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    xvfb x11vnc novnc websockify \
+    xvfb x11vnc novnc websockify dbus dbus-x11 \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
