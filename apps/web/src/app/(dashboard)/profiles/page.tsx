@@ -198,7 +198,9 @@ export default function ProfilesPage() {
     let cred = { username: '', password: '', pin: '', otpEmail: '', totpSecret: '' };
     try {
       cred = await api.get(`/profiles/${p.id}/credentials`);
-    } catch {}
+    } catch (err: any) {
+      console.error('Failed to load credentials:', err?.message || err);
+    }
     setForm({
       name: p.name,
       kind: p.kind,
