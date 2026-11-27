@@ -12,4 +12,4 @@ DO DB details.txt
 
 # Browser session profiles (runtime scraper data)
 apps/api/profiles/
-Backup/scraper-backup-2026-11-26.json
+Backup/
