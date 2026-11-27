@@ -558,7 +558,7 @@ export default function ProfilesPage() {
                   <label>
                     <span>Password</span>
                     <input
-                      type="password"
+                      type="text"
                       value={form.credPassword}
                       onChange={(e) => setForm({ ...form, credPassword: e.target.value })}
                       placeholder="Login password"
@@ -586,7 +586,7 @@ export default function ProfilesPage() {
                   <label>
                     <span>TOTP Secret (2FA)</span>
                     <input
-                      type="password"
+                      type="text"
                       value={form.credTotpSecret}
                       onChange={(e) => setForm({ ...form, credTotpSecret: e.target.value })}
                       placeholder="Base32 secret from QR code"
