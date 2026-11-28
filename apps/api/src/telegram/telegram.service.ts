@@ -31,8 +31,11 @@ export interface TelegramSettings {
   allowedUsernames: string[];
   sendImage: boolean;
   sendText: boolean;
+  summaryText: boolean;
   summaryImage: boolean;
+  rankingsText: boolean;
   rankingsImage: boolean;
+  statusText: boolean;
   statusImage: boolean;
   alertChatIds: string[];
   features: TelegramFeatures;
@@ -47,8 +50,11 @@ const DEFAULT_TELEGRAM_SETTINGS: TelegramSettings = {
   allowedUsernames: [],
   sendImage: true,
   sendText: true,
+  summaryText: true,
   summaryImage: false,
+  rankingsText: true,
   rankingsImage: false,
+  statusText: true,
   statusImage: false,
   alertChatIds: [],
   features: {
@@ -501,14 +507,14 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
   private async sendMainMenu(chatId: number, messageId?: number) {
     await this.loadSettings();
-    const feat = this.settings.features || {} as TelegramFeatures;
+    const s = this.settings;
 
     const row1 = [{ text: '📋 Profiles', callback_data: 'list' }];
-    if (feat.summary) row1.push({ text: '📊 Summary', callback_data: 'summary' });
+    if (s.summaryText || s.summaryImage) row1.push({ text: '📊 Summary', callback_data: 'summary' });
 
     const row2: { text: string; callback_data: string }[] = [];
-    if (feat.rankings) row2.push({ text: '🏆 Rankings', callback_data: 'rankings' });
-    if (feat.statusCheck) row2.push({ text: '🔍 Status', callback_data: 'status' });
+    if (s.rankingsText || s.rankingsImage) row2.push({ text: '🏆 Rankings', callback_data: 'rankings' });
+    if (s.statusText || s.statusImage) row2.push({ text: '🔍 Status', callback_data: 'status' });
 
     const rows = [row1];
     if (row2.length) rows.push(row2);
@@ -1174,28 +1180,35 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         ],
       };
 
+      let png: Buffer | null = null;
       if (this.settings.summaryImage) {
-        const rates = await getExchangeRates();
+        const imgRates = rates || await getExchangeRates();
         const platformData: SummaryPlatform[] = Object.entries(byPlatform).map(([kind, data]) => {
           const currency = currencyForPlatform(kind);
-          const convLabels = rates ? convertedLabels(data.dep, currency, rates) : [];
+          const convLabels = imgRates ? convertedLabels(data.dep, currency, imgRates) : [];
           return { kind, count: data.count, dep: data.dep, with: data.with, convLabels };
         });
         const missing = profiles.filter((p) => !scrapes.find((s) => s.profileId === p.id));
         const missingNames = missing.map((p) => p.name);
-        const png = await renderSummaryCard(
+        png = await renderSummaryCard(
           periodLabel, dateLabel, platformData, totalDep, totalWith, totalProfiles, profiles.length, missingNames,
         );
-        if (png) {
-          if (messageId) {
-            await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
-          }
-          await this.sendPhoto(chatId, png, { caption: text, reply_markup: kb });
-          return;
-        }
       }
 
-      await this.finishText(chatId, messageId ?? null, text, kb);
+      if (png) {
+        if (messageId) {
+          await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
+        }
+        await this.sendPhoto(chatId, png, {
+          caption: this.settings.summaryText ? text : undefined,
+          reply_markup: kb,
+        });
+        if (this.settings.summaryText && text.length > 1024) {
+          await this.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup: kb });
+        }
+      } else {
+        await this.finishText(chatId, messageId ?? null, text, kb);
+      }
     } catch (err: any) {
       this.logger.error(`Summary failed: ${err.message}`);
       await this.sendMessage(chatId, `❌ Summary failed: ${esc(err.message)}`, { parse_mode: 'HTML' });
@@ -1298,23 +1311,30 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
       const text = lines.join('\n');
 
+      let png: Buffer | null = null;
       if (this.settings.rankingsImage) {
         const rankEntries: RankingEntry[] = ranked.map((r) => ({
           name: r.name,
           dep: r.dep,
           net: r.dep - r.with,
         }));
-        const png = await renderRankingsCard(periodLabel, dateLabel, rankEntries);
-        if (png) {
-          if (messageId) {
-            await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
-          }
-          await this.sendPhoto(chatId, png, { caption: text, reply_markup: periodKb });
-          return;
-        }
+        png = await renderRankingsCard(periodLabel, dateLabel, rankEntries);
       }
 
-      await this.finishText(chatId, messageId ?? null, text, periodKb);
+      if (png) {
+        if (messageId) {
+          await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
+        }
+        await this.sendPhoto(chatId, png, {
+          caption: this.settings.rankingsText ? text : undefined,
+          reply_markup: periodKb,
+        });
+        if (this.settings.rankingsText && text.length > 1024) {
+          await this.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup: periodKb });
+        }
+      } else {
+        await this.finishText(chatId, messageId ?? null, text, periodKb);
+      }
     } catch (err: any) {
       this.logger.error(`Rankings failed: ${err.message}`);
       await this.sendMessage(chatId, `❌ Rankings failed: ${esc(err.message)}`, { parse_mode: 'HTML' });
@@ -1367,21 +1387,28 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       const text = lines.join('\n');
       const kb = { inline_keyboard: [[{ text: '‹ Back to menu', callback_data: 'menu' }]] };
 
+      let png: Buffer | null = null;
       if (this.settings.statusImage) {
         const statusGroups: StatusGroup[] = order
           .filter((s) => groups[s]?.length)
           .map((s) => ({ status: s, icon: statusIcon[s] || '❓', names: groups[s] }));
-        const png = await renderStatusCard(formatICT(), statusGroups, loggedIn, profiles.length);
-        if (png) {
-          if (messageId) {
-            await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
-          }
-          await this.sendPhoto(chatId, png, { caption: text, reply_markup: kb });
-          return;
-        }
+        png = await renderStatusCard(formatICT(), statusGroups, loggedIn, profiles.length);
       }
 
-      await this.finishText(chatId, messageId ?? null, text, kb);
+      if (png) {
+        if (messageId) {
+          await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
+        }
+        await this.sendPhoto(chatId, png, {
+          caption: this.settings.statusText ? text : undefined,
+          reply_markup: kb,
+        });
+        if (this.settings.statusText && text.length > 1024) {
+          await this.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup: kb });
+        }
+      } else {
+        await this.finishText(chatId, messageId ?? null, text, kb);
+      }
     } catch (err: any) {
       this.logger.error(`Status check failed: ${err.message}`);
       await this.sendMessage(chatId, `❌ Status check failed: ${esc(err.message)}`, { parse_mode: 'HTML' });

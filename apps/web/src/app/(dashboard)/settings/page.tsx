@@ -30,8 +30,11 @@ interface TelegramSettings {
   restricted: boolean;
   sendImage: boolean;
   sendText: boolean;
+  summaryText?: boolean;
   summaryImage?: boolean;
+  rankingsText?: boolean;
   rankingsImage?: boolean;
+  statusText?: boolean;
   statusImage?: boolean;
   allowedChatIds: string[];
   alertChatIds: string[];
@@ -111,8 +114,11 @@ export default function SettingsPage() {
         restricted: telegram.restricted,
         sendImage: telegram.sendImage,
         sendText: telegram.sendText,
+        summaryText: telegram.summaryText,
         summaryImage: telegram.summaryImage,
+        rankingsText: telegram.rankingsText,
         rankingsImage: telegram.rankingsImage,
+        statusText: telegram.statusText,
         statusImage: telegram.statusImage,
         features: telegram.features,
         scheduledPush: telegram.scheduledPush,
@@ -429,9 +435,39 @@ export default function SettingsPage() {
               <h4 className="settings-subsection-title">Bot Features</h4>
 
               {([
-                { key: 'summary' as const, label: 'Summary', desc: 'All-profiles consolidated totals' },
-                { key: 'rankings' as const, label: 'Rankings', desc: 'Top/bottom profiles by deposits' },
-                { key: 'statusCheck' as const, label: 'Status Check', desc: 'Session status overview' },
+                { label: 'Summary', desc: 'All-profiles consolidated totals', textKey: 'summaryText', imgKey: 'summaryImage', featureKey: 'summary' },
+                { label: 'Rankings', desc: 'Top/bottom profiles by deposits', textKey: 'rankingsText', imgKey: 'rankingsImage', featureKey: 'rankings' },
+                { label: 'Status Check', desc: 'Session status overview', textKey: 'statusText', imgKey: 'statusImage', featureKey: 'statusCheck' },
+              ] as const).map(({ label, desc, textKey, imgKey, featureKey }) => (
+                <div key={featureKey} className="settings-row">
+                  <div className="settings-row-label">
+                    <span>{label}</span>
+                    <span className="settings-desc">{desc}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: 'var(--muted)' }}>
+                      <input
+                        type="checkbox"
+                        checked={(telegram as any)[textKey] ?? true}
+                        onChange={(e) => setTelegram({ ...telegram, [textKey]: e.target.checked })}
+                        style={{ accentColor: 'var(--accent)', width: '16px', height: '16px' }}
+                      />
+                      Text
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontSize: '13px', color: 'var(--muted)' }}>
+                      <input
+                        type="checkbox"
+                        checked={(telegram as any)[imgKey] ?? false}
+                        onChange={(e) => setTelegram({ ...telegram, [imgKey]: e.target.checked })}
+                        style={{ accentColor: 'var(--accent)', width: '16px', height: '16px' }}
+                      />
+                      Image
+                    </label>
+                  </div>
+                </div>
+              ))}
+
+              {([
                 { key: 'pinFavorites' as const, label: 'Pin Favorites', desc: 'Star key profiles to show first' },
                 { key: 'scheduledPush' as const, label: 'Scheduled Push', desc: 'Auto-send daily summary' },
                 { key: 'thresholdAlerts' as const, label: 'Threshold Alerts', desc: 'Alert on metric drops' },
@@ -514,30 +550,6 @@ export default function SettingsPage() {
                   </div>
                 </>
               )}
-
-              <h4 className="settings-subsection-title" style={{ marginTop: '20px' }}>Image Output</h4>
-              <p className="settings-desc" style={{ marginBottom: '12px' }}>Send PNG card images instead of plain text for these commands</p>
-
-              {([
-                { key: 'summaryImage' as const, label: 'Summary Image', desc: 'Send summary as a styled PNG card' },
-                { key: 'rankingsImage' as const, label: 'Rankings Image', desc: 'Send rankings as a styled PNG card' },
-                { key: 'statusImage' as const, label: 'Status Image', desc: 'Send status check as a styled PNG card' },
-              ] as const).map(({ key, label, desc }) => (
-                <div key={key} className="settings-row">
-                  <div className="settings-row-label">
-                    <span>{label}</span>
-                    <span className="settings-desc">{desc}</span>
-                  </div>
-                  <label className="toggle">
-                    <input
-                      type="checkbox"
-                      checked={(telegram as any)[key] ?? false}
-                      onChange={(e) => setTelegram({ ...telegram, [key]: e.target.checked })}
-                    />
-                    <span className="toggle-slider" />
-                  </label>
-                </div>
-              ))}
 
               {canEdit && (
                 <div className="settings-card-actions">
