@@ -399,14 +399,38 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     }
 
     if (data === 'summary') {
-      await this.call('answerCallbackQuery', { callback_query_id: cq.id, text: 'Loading summary…' }).catch(() => {});
-      await this.doSummary(chatId, messageId);
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
+      await this.sendSummaryMenu(chatId, messageId);
+      return;
+    }
+
+    if (data === 'summary:today') {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id, text: 'Loading today summary…' }).catch(() => {});
+      await this.doSummary(chatId, 'today', messageId);
+      return;
+    }
+
+    if (data === 'summary:yesterday') {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id, text: 'Loading yesterday summary…' }).catch(() => {});
+      await this.doSummary(chatId, 'yesterday', messageId);
       return;
     }
 
     if (data === 'rankings') {
-      await this.call('answerCallbackQuery', { callback_query_id: cq.id, text: 'Loading rankings…' }).catch(() => {});
-      await this.doRankings(chatId, messageId);
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
+      await this.sendRankingsMenu(chatId, messageId);
+      return;
+    }
+
+    if (data === 'rankings:today') {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id, text: 'Loading today rankings…' }).catch(() => {});
+      await this.doRankings(chatId, 'today', messageId);
+      return;
+    }
+
+    if (data === 'rankings:yesterday') {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id, text: 'Loading yesterday rankings…' }).catch(() => {});
+      await this.doRankings(chatId, 'yesterday', messageId);
       return;
     }
 
@@ -1026,14 +1050,36 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
   // --- Summary (all profiles) ---
 
-  private async doSummary(chatId: number, messageId?: number) {
+  private async sendSummaryMenu(chatId: number, messageId?: number) {
+    const text = '📊 <b>Summary — All Profiles</b>\nSelect period:';
+    const kb = {
+      inline_keyboard: [
+        [
+          { text: '🔄 Today', callback_data: 'summary:today' },
+          { text: '📅 Yesterday', callback_data: 'summary:yesterday' },
+        ],
+        [{ text: '‹ Back to menu', callback_data: 'menu' }],
+      ],
+    };
+    const payload: any = { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: kb };
+    if (messageId) {
+      await this.call('editMessageText', { ...payload, message_id: messageId }).catch(() =>
+        this.call('sendMessage', payload),
+      );
+    } else {
+      await this.call('sendMessage', payload);
+    }
+  }
+
+  private async doSummary(chatId: number, period: 'today' | 'yesterday', messageId?: number) {
     try {
       const profiles = await this.prisma.profile.findMany();
-      const { businessDayDate } = await import('../common/business-day');
-      const today = businessDayDate();
+      const { businessDayDate, yesterdayBusinessDate } = await import('../common/business-day');
+      const targetDate = period === 'yesterday' ? yesterdayBusinessDate() : businessDayDate();
+      const periodLabel = period === 'yesterday' ? 'Yesterday' : 'Today';
 
       const scrapes = await this.prisma.scrape.findMany({
-        where: { reportDate: today },
+        where: { reportDate: targetDate },
         include: { profile: true },
       });
 
@@ -1055,10 +1101,10 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         byPlatform[kind].count++;
       }
 
-      const timeStr = formatICT();
+      const dateLabel = formatICTDate(targetDate);
       const lines: string[] = [
-        `📊 <b>Summary — All Profiles</b>`,
-        `🕒 ${esc(timeStr)}`,
+        `📊 <b>Summary — ${periodLabel}</b>`,
+        `🕒 ${esc(dateLabel)} · ${esc(formatICT())}`,
         ``,
         `<pre>`,
         `Profiles fetched: ${totalProfiles}/${profiles.length}`,
@@ -1103,7 +1149,15 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       const text = lines.join('\n');
-      const kb = { inline_keyboard: [[{ text: '‹ Back to menu', callback_data: 'menu' }]] };
+      const kb = {
+        inline_keyboard: [
+          [
+            { text: '🔄 Today', callback_data: 'summary:today' },
+            { text: '📅 Yesterday', callback_data: 'summary:yesterday' },
+          ],
+          [{ text: '‹ Back to menu', callback_data: 'menu' }],
+        ],
+      };
       await this.finishText(chatId, messageId ?? null, text, kb);
     } catch (err: any) {
       this.logger.error(`Summary failed: ${err.message}`);
@@ -1113,19 +1167,50 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
   // --- Rankings ---
 
-  private async doRankings(chatId: number, messageId?: number) {
+  private async sendRankingsMenu(chatId: number, messageId?: number) {
+    const text = '🏆 <b>Rankings — By Deposits</b>\nSelect period:';
+    const kb = {
+      inline_keyboard: [
+        [
+          { text: '🔄 Today', callback_data: 'rankings:today' },
+          { text: '📅 Yesterday', callback_data: 'rankings:yesterday' },
+        ],
+        [{ text: '‹ Back to menu', callback_data: 'menu' }],
+      ],
+    };
+    const payload: any = { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: kb };
+    if (messageId) {
+      await this.call('editMessageText', { ...payload, message_id: messageId }).catch(() =>
+        this.call('sendMessage', payload),
+      );
+    } else {
+      await this.call('sendMessage', payload);
+    }
+  }
+
+  private async doRankings(chatId: number, period: 'today' | 'yesterday', messageId?: number) {
     try {
-      const { businessDayDate } = await import('../common/business-day');
-      const today = businessDayDate();
+      const { businessDayDate, yesterdayBusinessDate } = await import('../common/business-day');
+      const targetDate = period === 'yesterday' ? yesterdayBusinessDate() : businessDayDate();
+      const periodLabel = period === 'yesterday' ? 'Yesterday' : 'Today';
 
       const scrapes = await this.prisma.scrape.findMany({
-        where: { reportDate: today },
+        where: { reportDate: targetDate },
         include: { profile: true },
       });
 
+      const periodKb = {
+        inline_keyboard: [
+          [
+            { text: '🔄 Today', callback_data: 'rankings:today' },
+            { text: '📅 Yesterday', callback_data: 'rankings:yesterday' },
+          ],
+          [{ text: '‹ Back to menu', callback_data: 'menu' }],
+        ],
+      };
+
       if (!scrapes.length) {
-        const kb = { inline_keyboard: [[{ text: '‹ Back to menu', callback_data: 'menu' }]] };
-        await this.finishText(chatId, messageId ?? null, '🏆 <b>Rankings</b>\n\nNo data for today yet.', kb);
+        await this.finishText(chatId, messageId ?? null, `🏆 <b>Rankings — ${periodLabel}</b>\n\nNo data for ${periodLabel.toLowerCase()} yet.`, periodKb);
         return;
       }
 
@@ -1138,9 +1223,10 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         .sort((a, b) => b.dep - a.dep);
 
       const maxDep = ranked[0]?.dep || 1;
+      const dateLabel = formatICTDate(targetDate);
       const lines: string[] = [
-        `🏆 <b>Rankings — By Deposits</b>`,
-        `🕒 ${esc(formatICT())}`,
+        `🏆 <b>Rankings — ${periodLabel}</b>`,
+        `🕒 ${esc(dateLabel)} · ${esc(formatICT())}`,
         ``,
         `<pre>`,
       ];
@@ -1149,7 +1235,6 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         const r = ranked[i];
         const barLen = Math.max(1, Math.round((r.dep / maxDep) * 10));
         const bar = '█'.repeat(barLen) + '░'.repeat(10 - barLen);
-        const net = r.dep - r.with;
         const name = r.name.length > 10 ? r.name.slice(0, 9) + '…' : r.name;
         lines.push(`${String(i + 1).padStart(2)}. ${name.padEnd(10)} ${bar} ${fmtNum(r.dep)}`);
       }
@@ -1175,8 +1260,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       const text = lines.join('\n');
-      const kb = { inline_keyboard: [[{ text: '‹ Back to menu', callback_data: 'menu' }]] };
-      await this.finishText(chatId, messageId ?? null, text, kb);
+      await this.finishText(chatId, messageId ?? null, text, periodKb);
     } catch (err: any) {
       this.logger.error(`Rankings failed: ${err.message}`);
       await this.sendMessage(chatId, `❌ Rankings failed: ${esc(err.message)}`, { parse_mode: 'HTML' });
