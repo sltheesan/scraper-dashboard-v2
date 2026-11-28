@@ -66,6 +66,12 @@ function formatDisplayDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Bangkok' });
 }
 
+function shortDate(dateStr: string): string {
+  const parts = dateStr.split('-');
+  if (parts.length === 3) return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+  return dateStr.slice(5);
+}
+
 type ViewMode = 'charts' | 'table' | 'profiles';
 
 const COLORS_DARK  = ['#3987e5', '#d95926', '#199e70', '#c98500', '#d55181', '#0ca30c', '#9085e9', '#e66767'];
@@ -83,8 +89,6 @@ function useTheme(): 'dark' | 'light' {
   return t;
 }
 
-// --- Chart components (SVG inline styles kept for paint attributes) ---
-
 function Sparkline({ values, color, height = 32 }: { values: number[]; color: string; height?: number }) {
   if (values.length < 2) return null;
   const W = 120, H = height;
@@ -101,15 +105,16 @@ function Sparkline({ values, color, height = 32 }: { values: number[]; color: st
   );
 }
 
-function TrendLine({ series, dates, theme, height = 240 }: {
+function TrendLine({ series, dates, theme, height = 240, title }: {
   series: { label: string; values: number[]; color: string }[];
   dates: string[];
   theme: 'dark' | 'light';
   height?: number;
+  title?: string;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
-  const W = 700, H = height, PL = 65, PR = 16, PT = 16, PB = 36;
+  const W = 700, H = height, PL = 65, PR = 16, PT = 16, PB = 32;
   const plotW = W - PL - PR, plotH = H - PT - PB;
   const textCol = theme === 'dark' ? '#898781' : '#898781';
   const gridCol = theme === 'dark' ? '#2c2c2a' : '#e1e0d9';
@@ -139,6 +144,12 @@ function TrendLine({ series, dates, theme, height = 240 }: {
 
   if (dates.length === 0) return <div className="text-muted text-[13px] p-5">No data</div>;
 
+  const labelDates = dates.filter((_, i) => {
+    if (dates.length <= 14) return true;
+    const step = Math.ceil(dates.length / 10);
+    return i % step === 0 || i === dates.length - 1;
+  });
+
   return (
     <div className="relative">
       <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height: 'auto' }}
@@ -147,7 +158,7 @@ function TrendLine({ series, dates, theme, height = 240 }: {
           <g key={t}>
             <line x1={PL} x2={PL + plotW} y1={py(t)} y2={py(t)} stroke={gridCol} strokeWidth={1} />
             <text x={PL - 8} y={py(t) + 4} textAnchor="end" fill={textCol} fontSize={10} fontFamily="system-ui,sans-serif">
-              {t >= 1000 ? `${(t / 1000).toLocaleString('en-US')}K` : t.toLocaleString('en-US')}
+              {t >= 1_000_000 ? `${(t / 1_000_000).toFixed(1)}M` : t >= 1000 ? `${(t / 1000).toLocaleString('en-US')}K` : t.toLocaleString('en-US')}
             </text>
           </g>
         ))}
@@ -167,18 +178,14 @@ function TrendLine({ series, dates, theme, height = 240 }: {
           );
         })}
 
-        {dates.filter((_, i) => {
-          if (dates.length <= 12) return true;
-          const step = Math.ceil(dates.length / 8);
-          return i % step === 0 || i === dates.length - 1;
-        }).map((d) => (
-          <text key={d} x={px(dates.indexOf(d))} y={PT + plotH + 18} textAnchor="middle" fill={textCol} fontSize={10} fontFamily="system-ui,sans-serif">
-            {d.slice(5)}
+        {labelDates.map((d) => (
+          <text key={d} x={px(dates.indexOf(d))} y={PT + plotH + 16} textAnchor="middle" fill={textCol} fontSize={10} fontFamily="system-ui,sans-serif">
+            {shortDate(d)}
           </text>
         ))}
 
         {series.length > 1 && series.map((s, i) => (
-          <g key={s.label} transform={`translate(${PL + i * 110}, ${H - 4})`}>
+          <g key={s.label} transform={`translate(${PL + i * 110}, ${H - 2})`}>
             <line x1={0} x2={16} y1={0} y2={0} stroke={s.color} strokeWidth={2} strokeLinecap="round" />
             <text x={20} y={4} fill={textCol} fontSize={10} fontFamily="system-ui,sans-serif">{s.label}</text>
           </g>
@@ -198,12 +205,12 @@ function TrendLine({ series, dates, theme, height = 240 }: {
           className="absolute top-0 pointer-events-none whitespace-nowrap z-10 rounded-md px-3 py-2 text-xs shadow-lg border bg-surface border-border"
           style={{ left: `${(px(hoverIdx) / W) * 100}%`, transform: 'translateX(-50%)' }}
         >
-          <div className="text-[11px] text-muted mb-1">{dates[hoverIdx]}</div>
+          <div className="text-[11px] text-muted mb-1">{formatDisplayDate(dates[hoverIdx])}</div>
           {series.map((s) => (
             <div key={s.label} className="flex items-center gap-1.5 mt-0.5">
               <span className="w-2 h-2 rounded-sm shrink-0" style={{ background: s.color }} />
               <span className="flex-1 text-muted">{s.label}</span>
-              <span className="font-semibold">{fmt(s.values[hoverIdx], s.label.includes('Amt'))}</span>
+              <span className="font-semibold tabular-nums">{fmt(s.values[hoverIdx], s.label.includes('Amt'))}</span>
             </div>
           ))}
         </div>
@@ -221,7 +228,7 @@ function HBar({ rows, theme, color }: {
   const max = Math.max(...rows.map((r) => r.value), 1);
   const textCol = theme === 'dark' ? '#c3c2b7' : '#52514e';
   const gridCol = theme === 'dark' ? '#2c2c2a' : '#e1e0d9';
-  const barH = 20, gap = 3, PL = 95, PR = 70, PT = 4;
+  const barH = 22, gap = 4, PL = 95, PR = 70, PT = 4;
   const W = 500, plotW = W - PL - PR;
   const totalH = PT + rows.length * (barH + gap) + 4;
 
@@ -251,7 +258,75 @@ function HBar({ rows, theme, color }: {
   );
 }
 
-// --- Main page ---
+function StackedBar({ data, dates, theme }: {
+  data: { kind: string; values: number[] }[];
+  dates: string[];
+  theme: 'dark' | 'light';
+}) {
+  const colors = theme === 'dark' ? COLORS_DARK : COLORS_LIGHT;
+  const textCol = theme === 'dark' ? '#898781' : '#898781';
+  const gridCol = theme === 'dark' ? '#2c2c2a' : '#e1e0d9';
+  const W = 700, H = 180, PL = 65, PR = 16, PT = 12, PB = 32;
+  const plotW = W - PL - PR, plotH = H - PT - PB;
+
+  const totals = dates.map((_, i) => data.reduce((s, d) => s + (d.values[i] || 0), 0));
+  const rawMax = Math.max(...totals, 1);
+  const mag = Math.pow(10, Math.floor(Math.log10(rawMax)));
+  const niceMax = Math.ceil(rawMax / mag) * mag || 1;
+  const barW = Math.min(plotW / dates.length * 0.6, 40);
+  const gap = (plotW - barW * dates.length) / Math.max(dates.length - 1, 1);
+
+  const labelDates = dates.filter((_, i) => {
+    if (dates.length <= 14) return true;
+    const step = Math.ceil(dates.length / 10);
+    return i % step === 0 || i === dates.length - 1;
+  });
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full block" style={{ height: 'auto' }}>
+      {[0, 0.25, 0.5, 0.75, 1].map((f) => {
+        const v = niceMax * f;
+        const y = PT + plotH - (v / niceMax) * plotH;
+        return (
+          <g key={f}>
+            <line x1={PL} x2={PL + plotW} y1={y} y2={y} stroke={gridCol} strokeWidth={1} />
+            <text x={PL - 8} y={y + 4} textAnchor="end" fill={textCol} fontSize={10} fontFamily="system-ui,sans-serif">
+              {v >= 1_000_000 ? `${(v / 1_000_000).toFixed(0)}M` : v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v.toFixed(0)}
+            </text>
+          </g>
+        );
+      })}
+      {dates.map((d, di) => {
+        const x = PL + di * (barW + gap);
+        let yOffset = PT + plotH;
+        return (
+          <g key={d}>
+            {data.map((series, si) => {
+              const val = series.values[di] || 0;
+              const h = (val / niceMax) * plotH;
+              yOffset -= h;
+              return <rect key={series.kind} x={x} y={yOffset} width={barW} height={h} rx={1} fill={colors[si % colors.length]} opacity={0.8} />;
+            })}
+          </g>
+        );
+      })}
+      {labelDates.map((d) => {
+        const di = dates.indexOf(d);
+        return (
+          <text key={d} x={PL + di * (barW + gap) + barW / 2} y={PT + plotH + 16} textAnchor="middle" fill={textCol} fontSize={10} fontFamily="system-ui,sans-serif">
+            {shortDate(d)}
+          </text>
+        );
+      })}
+      {data.map((s, i) => (
+        <g key={s.kind} transform={`translate(${PL + i * 100}, ${H - 2})`}>
+          <rect x={0} y={-5} width={12} height={8} rx={2} fill={colors[i % colors.length]} opacity={0.8} />
+          <text x={16} y={3} fill={textCol} fontSize={10} fontFamily="system-ui,sans-serif">{s.kind}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
 
 export default function ReportsPage() {
   const { hasPrivilege } = useAuth();
@@ -306,8 +381,6 @@ export default function ReportsPage() {
     finally { setLoading(false); }
   }
 
-  // --- Computed analytics ---
-
   const dailyAgg = useMemo(() => {
     const byDate: Record<string, Record<string, number>> = {};
     for (const r of data) {
@@ -338,6 +411,49 @@ export default function ReportsPage() {
     return Object.entries(byP).map(([id, v]) => ({ id, ...v })).sort((a, b) => a.name.localeCompare(b.name));
   }, [data]);
 
+  const platformAgg = useMemo(() => {
+    const byKind: Record<string, { dep: number; wd: number; net: number; reg: number; count: number }> = {};
+    for (const r of data) {
+      const k = r.profile.kind;
+      if (!byKind[k]) byKind[k] = { dep: 0, wd: 0, net: 0, reg: 0, count: 0 };
+      byKind[k].dep += numVal(r.totalDepositAmount);
+      byKind[k].wd += numVal(r.totalWithdrawalAmount);
+      byKind[k].reg += numVal(r.newRegistrationCount);
+    }
+    for (const k of Object.keys(byKind)) {
+      byKind[k].net = byKind[k].dep - byKind[k].wd;
+      byKind[k].count = profileTotals.filter(p => p.kind === k).length;
+    }
+    return Object.entries(byKind).sort((a, b) => b[1].dep - a[1].dep);
+  }, [data, profileTotals]);
+
+  const dailyByKind = useMemo(() => {
+    const kindSet = new Set(data.map(r => r.profile.kind));
+    const kindList = [...kindSet].sort();
+    return kindList.map(kind => ({
+      kind,
+      values: dailyAgg.dates.map(d => {
+        let total = 0;
+        for (const r of data) {
+          if (r.reportDateString === d && r.profile.kind === kind) {
+            total += numVal(r.totalDepositAmount);
+          }
+        }
+        return total;
+      }),
+    }));
+  }, [data, dailyAgg.dates]);
+
+  const bestDay = useMemo(() => {
+    if (dailyAgg.dates.length < 2) return null;
+    let bestIdx = 0, bestNet = -Infinity;
+    for (let i = 0; i < dailyAgg.rows.length; i++) {
+      const net = (dailyAgg.rows[i].totalDepositAmount || 0) - (dailyAgg.rows[i].totalWithdrawalAmount || 0);
+      if (net > bestNet) { bestNet = net; bestIdx = i; }
+    }
+    return { date: dailyAgg.dates[bestIdx], net: bestNet };
+  }, [dailyAgg]);
+
   function exportCSV() {
     if (!data.length) return;
     const header = ['Date', 'Profile', 'Kind', ...METRICS.map((m) => m.label)];
@@ -355,72 +471,75 @@ export default function ReportsPage() {
       {error && <div className="error-msg mb-3">{error}</div>}
 
       {/* ── Filter bar ── */}
-      <div className="bg-surface border border-border rounded p-3.5 mb-4">
-        <div className="flex gap-2.5 flex-wrap items-end">
-          <div className="min-w-[100px] flex-1 sm:flex-none sm:min-w-[120px]">
-            <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">Platform</label>
-            <select value={kindFilter} onChange={(e) => { setKindFilter(e.target.value); setSelectedProfiles([]); }} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2">
-              <option value="ALL">All</option>
-              {kinds.map((k) => <option key={k} value={k}>{k}</option>)}
-            </select>
-          </div>
-          <div className="min-w-[90px] flex-1 sm:flex-none sm:min-w-[110px]">
-            <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">Date</label>
-            <select value={dateMode} onChange={(e) => setDateMode(e.target.value as any)} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2">
-              <option value="range">Range</option>
-              <option value="single">Single</option>
-            </select>
-          </div>
-          {dateMode === 'single' ? (
-            <div className="min-w-[130px] flex-1 sm:flex-none sm:min-w-[150px]">
-              <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">Date</label>
-              <input type="date" value={singleDate} onChange={(e) => setSingleDate(e.target.value)} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2" />
+      <div className="report-filter-bar">
+        <div className="report-filter-row">
+          <div className="report-filter-group">
+            <div className="report-filter-field">
+              <label className="report-filter-label">Platform</label>
+              <select value={kindFilter} onChange={(e) => { setKindFilter(e.target.value); setSelectedProfiles([]); }} className="report-select">
+                <option value="ALL">All</option>
+                {kinds.map((k) => <option key={k} value={k}>{k}</option>)}
+              </select>
             </div>
-          ) : (
-            <>
-              <div className="min-w-[130px] flex-1 sm:flex-none sm:min-w-[150px]">
-                <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">From</label>
-                <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2" />
+            <div className="report-filter-field">
+              <label className="report-filter-label">Date</label>
+              <select value={dateMode} onChange={(e) => setDateMode(e.target.value as any)} className="report-select">
+                <option value="range">Range</option>
+                <option value="single">Single</option>
+              </select>
+            </div>
+            {dateMode === 'single' ? (
+              <div className="report-filter-field">
+                <label className="report-filter-label">Date</label>
+                <input type="date" value={singleDate} onChange={(e) => setSingleDate(e.target.value)} className="report-input" />
               </div>
-              <div className="min-w-[130px] flex-1 sm:flex-none sm:min-w-[150px]">
-                <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">To</label>
-                <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2" />
-              </div>
-            </>
-          )}
-          <div className="flex gap-1 self-end overflow-x-auto flex-shrink-0">
-            {[
-              { l: 'Today', fn: () => { setDateMode('single'); setSingleDate(toDateStr(new Date())); } },
-              { l: 'Yest', fn: () => { setDateMode('single'); const d = new Date(); d.setDate(d.getDate() - 1); setSingleDate(toDateStr(d)); } },
-              { l: '7d', fn: () => { setDateMode('range'); const d = new Date(); d.setDate(d.getDate() - 6); setDateFrom(toDateStr(d)); setDateTo(toDateStr(new Date())); } },
-              { l: '30d', fn: () => { setDateMode('range'); const d = new Date(); d.setDate(d.getDate() - 29); setDateFrom(toDateStr(d)); setDateTo(toDateStr(new Date())); } },
-              { l: 'MTD', fn: () => { setDateMode('range'); const n = new Date(); setDateFrom(toDateStr(new Date(n.getFullYear(), n.getMonth(), 1))); setDateTo(toDateStr(n)); } },
-              { l: 'Last Mo', fn: () => { setDateMode('range'); const n = new Date(); setDateFrom(toDateStr(new Date(n.getFullYear(), n.getMonth() - 1, 1))); setDateTo(toDateStr(new Date(n.getFullYear(), n.getMonth(), 0))); } },
-            ].map((p) => (
-              <button key={p.l} type="button" onClick={p.fn} className="bg-transparent border border-border text-muted text-[11px] font-semibold px-2.5 py-1 rounded cursor-pointer whitespace-nowrap hover:bg-surface-hover hover:text-[var(--text)] transition-colors">
-                {p.l}
-              </button>
-            ))}
+            ) : (
+              <>
+                <div className="report-filter-field">
+                  <label className="report-filter-label">From</label>
+                  <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="report-input" />
+                </div>
+                <div className="report-filter-field">
+                  <label className="report-filter-label">To</label>
+                  <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="report-input" />
+                </div>
+              </>
+            )}
           </div>
-          <button
-            type="button"
-            onClick={() => setShowProfilePicker(!showProfilePicker)}
-            className={`bg-transparent border border-border text-[11px] font-semibold px-2.5 py-1 rounded cursor-pointer whitespace-nowrap hover:bg-surface-hover transition-colors ${selectedProfiles.length > 0 ? 'text-accent border-accent' : 'text-muted'}`}
-          >
-            {selectedProfiles.length > 0 ? `${selectedProfiles.length} profiles` : 'All profiles'}
-          </button>
-          <button className="btn btn-primary h-[34px] px-5" onClick={generate} disabled={loading}>
-            {loading ? 'Loading…' : 'Generate'}
-          </button>
+
+          <div className="report-filter-actions">
+            <div className="report-presets">
+              {[
+                { l: 'Today', fn: () => { setDateMode('single'); setSingleDate(toDateStr(new Date())); } },
+                { l: 'Yest', fn: () => { setDateMode('single'); const d = new Date(); d.setDate(d.getDate() - 1); setSingleDate(toDateStr(d)); } },
+                { l: '7d', fn: () => { setDateMode('range'); const d = new Date(); d.setDate(d.getDate() - 6); setDateFrom(toDateStr(d)); setDateTo(toDateStr(new Date())); } },
+                { l: '30d', fn: () => { setDateMode('range'); const d = new Date(); d.setDate(d.getDate() - 29); setDateFrom(toDateStr(d)); setDateTo(toDateStr(new Date())); } },
+                { l: 'MTD', fn: () => { setDateMode('range'); const n = new Date(); setDateFrom(toDateStr(new Date(n.getFullYear(), n.getMonth(), 1))); setDateTo(toDateStr(n)); } },
+                { l: 'Last Mo', fn: () => { setDateMode('range'); const n = new Date(); setDateFrom(toDateStr(new Date(n.getFullYear(), n.getMonth() - 1, 1))); setDateTo(toDateStr(new Date(n.getFullYear(), n.getMonth(), 0))); } },
+              ].map((p) => (
+                <button key={p.l} type="button" onClick={p.fn} className="report-preset-btn">{p.l}</button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowProfilePicker(!showProfilePicker)}
+              className={`report-preset-btn ${selectedProfiles.length > 0 ? 'active' : ''}`}
+            >
+              {selectedProfiles.length > 0 ? `${selectedProfiles.length} profiles` : 'All profiles'}
+            </button>
+            <button className="btn btn-primary h-[34px] px-5" onClick={generate} disabled={loading}>
+              {loading ? 'Loading…' : 'Generate'}
+            </button>
+          </div>
         </div>
 
         {showProfilePicker && (
-          <div className="mt-3 border-t border-border pt-2.5">
+          <div className="report-profile-picker">
             <div className="flex justify-between items-center mb-1.5">
               <input type="text" placeholder="Search profiles…" value={profileSearch} onChange={(e) => setProfileSearch(e.target.value)} className="w-40 h-[26px] text-[11px] px-2 bg-bg border border-border rounded-sm" />
               <div className="flex gap-1">
-                <button type="button" onClick={() => setSelectedProfiles(filteredProfiles.map((p) => p.id))} className="bg-transparent border border-border text-muted text-[10px] font-semibold px-2 py-0.5 rounded cursor-pointer hover:bg-surface-hover transition-colors">All</button>
-                <button type="button" onClick={() => setSelectedProfiles([])} className="bg-transparent border border-border text-muted text-[10px] font-semibold px-2 py-0.5 rounded cursor-pointer hover:bg-surface-hover transition-colors">Clear</button>
+                <button type="button" onClick={() => setSelectedProfiles(filteredProfiles.map((p) => p.id))} className="report-preset-btn text-[10px]">All</button>
+                <button type="button" onClick={() => setSelectedProfiles([])} className="report-preset-btn text-[10px]">Clear</button>
               </div>
             </div>
             <div className="flex flex-wrap gap-1">
@@ -431,7 +550,7 @@ export default function ReportsPage() {
                     key={p.id}
                     type="button"
                     onClick={() => setSelectedProfiles((prev) => sel ? prev.filter((x) => x !== p.id) : [...prev, p.id])}
-                    className={`px-2 py-0.5 text-[11px] rounded cursor-pointer border transition-colors ${sel ? 'font-semibold border-accent bg-accent/10 text-accent' : 'font-normal border-border bg-transparent text-muted hover:bg-surface-hover'}`}
+                    className={`report-preset-btn ${sel ? 'active' : ''}`}
                   >
                     {p.name}
                   </button>
@@ -446,16 +565,22 @@ export default function ReportsPage() {
       {generated && data.length > 0 && (
         <>
           {/* KPI strip */}
-          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-2.5 mb-4">
-            {/* Net Flow — hero */}
-            <div className={`col-span-2 md:col-span-1 p-3 rounded-sm border ${netFlow >= 0 ? 'bg-success/[0.06] border-success/20' : 'bg-error/[0.06] border-error/20'}`}>
-              <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Net Flow</div>
-              <div className={`text-[22px] font-bold mt-0.5 tabular-nums ${netFlow >= 0 ? 'text-success' : 'text-error'}`}>
+          <div className="report-kpi-strip">
+            <div className={`report-kpi-hero ${netFlow >= 0 ? 'positive' : 'negative'}`}>
+              <div className="report-kpi-label">Net Flow</div>
+              <div className={`report-kpi-value-hero ${netFlow >= 0 ? 'text-success' : 'text-error'}`}>
                 {netFlow >= 0 ? '+' : ''}{fmtCurrency(netFlow)}
               </div>
-              <div className="text-[10px] text-muted mt-0.5 tabular-nums">
-                {fmtCurrency(netFlow / dayCount)}/day avg
-              </div>
+              <div className="report-kpi-sub tabular-nums">{fmtCurrency(netFlow / dayCount)}/day avg</div>
+              {dailyAgg.rows.length > 1 && (
+                <div className="mt-1.5">
+                  <Sparkline
+                    values={dailyAgg.rows.map((r) => (r.totalDepositAmount || 0) - (r.totalWithdrawalAmount || 0))}
+                    color={netFlow >= 0 ? '#199e70' : '#e66767'}
+                    height={24}
+                  />
+                </div>
+              )}
             </div>
 
             {METRICS.map((m) => {
@@ -469,11 +594,11 @@ export default function ReportsPage() {
                 <div
                   key={m.key}
                   onClick={() => setChartMetric(m.key)}
-                  className={`p-3 rounded-sm bg-surface border border-border cursor-pointer transition-all ${isActive ? 'opacity-100 ring-2 ring-accent ring-inset' : 'opacity-85 hover:opacity-100'}`}
+                  className={`report-kpi-card ${isActive ? 'active' : ''}`}
                 >
-                  <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">{m.short}</div>
-                  <div className="text-xl font-bold mt-0.5 tabular-nums">{m.isAmount ? fmtCurrency(total) : fmtCompact(total)}</div>
-                  <div className="text-[10px] text-muted mt-px tabular-nums">{m.isAmount ? fmtCurrency(avg) : fmtCompact(avg)}/day</div>
+                  <div className="report-kpi-label">{m.short}</div>
+                  <div className="report-kpi-value tabular-nums">{m.isAmount ? fmtCurrency(total) : fmtCompact(total)}</div>
+                  <div className="report-kpi-sub tabular-nums">{m.isAmount ? fmtCurrency(avg) : fmtCompact(avg)}/day</div>
                   <div className="mt-1.5">
                     <Sparkline values={vals} color={sparkColor} height={24} />
                   </div>
@@ -482,8 +607,36 @@ export default function ReportsPage() {
             })}
           </div>
 
+          {/* Insights row */}
+          {dailyAgg.dates.length > 1 && (
+            <div className="report-insights">
+              <div className="report-insight">
+                <span className="report-insight-icon">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </span>
+                <span>{dayCount} days · {profileTotals.length} profiles · {data.length} records</span>
+              </div>
+              {bestDay && (
+                <div className="report-insight">
+                  <span className="report-insight-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  </span>
+                  <span>Best day: <strong>{formatDisplayDate(bestDay.date)}</strong> ({netFlow >= 0 ? '+' : ''}{fmtCurrency(bestDay.net)} net)</span>
+                </div>
+              )}
+              {platformAgg.length > 1 && (
+                <div className="report-insight">
+                  <span className="report-insight-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  </span>
+                  <span>Top platform: <strong>{platformAgg[0][0]}</strong> ({fmtCurrency(platformAgg[0][1].dep)} deposits)</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Tabs + export */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3">
+          <div className="report-tabs-row">
             <div className="tabs">
               {([
                 { key: 'charts' as ViewMode, label: 'Charts' },
@@ -494,16 +647,21 @@ export default function ReportsPage() {
               ))}
             </div>
             <div className="flex gap-2 items-center">
-              <span className="text-xs text-muted">{data.length} records · {profileTotals.length} profiles · {dayCount} days</span>
-              <button type="button" onClick={exportCSV} className="bg-transparent border border-border text-muted text-[11px] font-semibold px-2.5 py-1 rounded cursor-pointer whitespace-nowrap hover:bg-surface-hover transition-colors">CSV</button>
+              <button type="button" onClick={exportCSV} className="report-preset-btn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
             </div>
           </div>
 
           {/* ── Charts tab ── */}
           {viewMode === 'charts' && (
             <div className="flex flex-col gap-4">
-              <div className="card p-4">
-                <div className="text-[13px] font-semibold mb-2">Deposit vs Withdrawal</div>
+              <div className="report-chart-card">
+                <div className="report-chart-header">
+                  <span className="report-chart-title">Deposit vs Withdrawal</span>
+                  <span className="report-chart-badge">{dayCount} days</span>
+                </div>
                 <TrendLine
                   dates={dailyAgg.dates}
                   series={[
@@ -515,9 +673,18 @@ export default function ReportsPage() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-4">
-                <div className="card p-4">
-                  <div className="text-[13px] font-semibold mb-2">
-                    {METRICS.find((m) => m.key === chartMetric)?.label} — Daily
+                <div className="report-chart-card">
+                  <div className="report-chart-header">
+                    <span className="report-chart-title">
+                      {METRICS.find((m) => m.key === chartMetric)?.label} — Daily
+                    </span>
+                    <select
+                      value={chartMetric}
+                      onChange={(e) => setChartMetric(e.target.value as MetricKey)}
+                      className="report-chart-select"
+                    >
+                      {METRICS.map((m) => <option key={m.key} value={m.key}>{m.short}</option>)}
+                    </select>
                   </div>
                   <TrendLine
                     dates={dailyAgg.dates}
@@ -531,9 +698,11 @@ export default function ReportsPage() {
                   />
                 </div>
 
-                <div className="card p-4">
-                  <div className="text-[13px] font-semibold mb-2">
-                    Top Profiles — {METRICS.find((m) => m.key === chartMetric)?.short}
+                <div className="report-chart-card">
+                  <div className="report-chart-header">
+                    <span className="report-chart-title">
+                      Top Profiles — {METRICS.find((m) => m.key === chartMetric)?.short}
+                    </span>
                   </div>
                   <HBar
                     rows={profileTotals.map((p) => ({ label: p.name, value: p.t[chartMetric] || 0, isAmount: METRICS.find((m) => m.key === chartMetric)?.isAmount })).sort((a, b) => b.value - a.value).slice(0, 12)}
@@ -543,16 +712,70 @@ export default function ReportsPage() {
                 </div>
               </div>
 
+              {/* Platform breakdown */}
+              {platformAgg.length > 1 && (
+                <div className="grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-4">
+                  <div className="report-chart-card">
+                    <div className="report-chart-header">
+                      <span className="report-chart-title">Deposits by Platform — Daily</span>
+                    </div>
+                    <StackedBar data={dailyByKind} dates={dailyAgg.dates} theme={theme} />
+                  </div>
+
+                  <div className="report-chart-card">
+                    <div className="report-chart-header">
+                      <span className="report-chart-title">Platform Summary</span>
+                    </div>
+                    <div className="report-platform-grid">
+                      {platformAgg.map(([kind, d]) => {
+                        const pct = totals.totalDepositAmount > 0 ? (d.dep / totals.totalDepositAmount * 100) : 0;
+                        return (
+                          <div key={kind} className="report-platform-item">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className={`badge badge-${kind.toLowerCase()}`}>{kind}</span>
+                              <span className="text-[11px] text-muted">{d.count} profiles</span>
+                            </div>
+                            <div className="report-platform-bar-track">
+                              <div className="report-platform-bar-fill" style={{ width: `${pct}%` }} />
+                            </div>
+                            <div className="grid grid-cols-3 gap-2 mt-2 text-center">
+                              <div>
+                                <div className="text-[10px] text-muted">Deposits</div>
+                                <div className="text-xs font-semibold tabular-nums">{fmtCompact(d.dep, true)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] text-muted">Withdrawals</div>
+                                <div className="text-xs font-semibold tabular-nums">{fmtCompact(d.wd, true)}</div>
+                              </div>
+                              <div>
+                                <div className="text-[10px] text-muted">Net</div>
+                                <div className={`text-xs font-bold tabular-nums ${d.net >= 0 ? 'text-success' : 'text-error'}`}>
+                                  {d.net >= 0 ? '+' : ''}{fmtCompact(d.net, true)}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="card p-4">
-                  <div className="text-[13px] font-semibold mb-2">Registrations + New Deposits</div>
+                <div className="report-chart-card">
+                  <div className="report-chart-header">
+                    <span className="report-chart-title">Registrations + New Deposits</span>
+                  </div>
                   <TrendLine dates={dailyAgg.dates} series={[
                     { label: 'New Reg', values: dailyAgg.rows.map((r) => r.newRegistrationCount || 0), color: colors[2] },
                     { label: 'New Dep', values: dailyAgg.rows.map((r) => r.newDepositCount || 0), color: colors[0] },
                   ]} theme={theme} height={180} />
                 </div>
-                <div className="card p-4">
-                  <div className="text-[13px] font-semibold mb-2">Deposit vs Withdrawal Count</div>
+                <div className="report-chart-card">
+                  <div className="report-chart-header">
+                    <span className="report-chart-title">Deposit vs Withdrawal Count</span>
+                  </div>
                   <TrendLine dates={dailyAgg.dates} series={[
                     { label: 'Dep #', values: dailyAgg.rows.map((r) => r.totalDepositCount || 0), color: colors[0] },
                     { label: 'WD #', values: dailyAgg.rows.map((r) => r.totalWithdrawalCount || 0), color: colors[1] },
@@ -633,7 +856,7 @@ export default function ReportsPage() {
                 <tbody>
                   {data.map((r) => (
                     <tr key={r.id}>
-                      <td className="cell-muted whitespace-nowrap">{formatDisplayDate(r.reportDate)}</td>
+                      <td className="cell-muted whitespace-nowrap">{formatDisplayDate(r.reportDateString)}</td>
                       <td className="cell-name">{r.profile.name}</td>
                       <td><span className={`badge badge-${r.profile.kind.toLowerCase()}`}>{r.profile.kind}</span></td>
                       {METRICS.map((m) => <td key={m.key} className="text-right tabular-nums">{fmt(r[m.key], m.isAmount)}</td>)}
@@ -648,13 +871,15 @@ export default function ReportsPage() {
 
       {generated && data.length === 0 && <div className="empty-state"><p>No data found for the selected filters.</p></div>}
 
-      {/* Landing state */}
       {!generated && (
-        <div className="text-center py-16 px-5">
-          <div className="text-4xl mb-2 opacity-30">◩</div>
-          <div className="text-base font-semibold mb-1.5">Generate a Report</div>
-          <div className="text-[13px] text-muted max-w-[400px] mx-auto leading-relaxed">
-            Select your date range and filters above, then click Generate. You'll see KPI tiles, trend charts, deposit vs withdrawal analysis, and per-profile breakdowns.
+        <div className="report-landing">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" className="report-landing-icon">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <div className="report-landing-title">Generate a Report</div>
+          <div className="report-landing-desc">
+            Select your date range and filters above, then click Generate.
+            You'll see KPI tiles, trend charts, and per-profile breakdowns.
           </div>
         </div>
       )}
