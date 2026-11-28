@@ -110,21 +110,23 @@ export class ScrapesService {
     proxy?: string;
     userDataDir?: string;
     dataFields?: any;
-  }) {
-    const { dayCutover } = await this.settings.getPlatformConfig(profile.kind);
-    const reportDate = yesterdayReportDate(dayCutover);
+  }, force = false) {
+    if (!force) {
+      const { dayCutover } = await this.settings.getPlatformConfig(profile.kind);
+      const reportDate = yesterdayReportDate(dayCutover);
 
-    const existing = await this.prisma.scrape.findUnique({
-      where: {
-        profileId_reportDate: {
-          profileId: profile.id,
-          reportDate,
+      const existing = await this.prisma.scrape.findUnique({
+        where: {
+          profileId_reportDate: {
+            profileId: profile.id,
+            reportDate,
+          },
         },
-      },
-    });
+      });
 
-    if (existing) {
-      return { cached: true, loggedIn: true, scrape: existing };
+      if (existing) {
+        return { cached: true, loggedIn: true, scrape: existing };
+      }
     }
 
     return this.runAndSave(profile, 'yesterday');

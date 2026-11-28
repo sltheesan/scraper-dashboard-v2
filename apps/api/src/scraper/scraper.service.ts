@@ -484,6 +484,10 @@ export class ScraperService implements OnModuleDestroy {
           }
         }
         if (waits.length) await Promise.race(waits);
+
+        if (period === 'yesterday') {
+          await this.setOneopsportalDate(page, reportDateFor('yesterday', cutover));
+        }
       } else {
         await Promise.race([
           page.waitForSelector('table tbody tr', { timeout: 20000 }).catch(() => null),
@@ -534,6 +538,75 @@ export class ScraperService implements OnModuleDestroy {
     } finally {
       this.running.delete(profile.id);
     }
+  }
+
+  private async setOneopsportalDate(page: Page, targetDate: Date): Promise<void> {
+    const yyyy = targetDate.getFullYear();
+    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(targetDate.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}/${mm}/${dd}`;
+    const rangeStr = `${dateStr} - ${dateStr}`;
+
+    const changed = await page.evaluate((val: string) => {
+      const inputs = Array.from(document.querySelectorAll('input'));
+      const dateInput = inputs.find((el) => {
+        const v = el.value || '';
+        return /\d{4}\/\d{2}\/\d{2}\s*-\s*\d{4}\/\d{2}\/\d{2}/.test(v);
+      });
+      if (!dateInput) return false;
+      const nativeSet = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+      if (nativeSet) nativeSet.call(dateInput, val);
+      else dateInput.value = val;
+      dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+      dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
+    }, rangeStr);
+
+    if (!changed) {
+      this.logger.warn('ONEOPSPORTAL: date picker input not found, trying iframe');
+      for (const frame of page.frames()) {
+        if (frame === page.mainFrame()) continue;
+        const done = await frame.evaluate((val: string) => {
+          const inputs = Array.from(document.querySelectorAll('input'));
+          const dateInput = inputs.find((el) => {
+            const v = el.value || '';
+            return /\d{4}\/\d{2}\/\d{2}\s*-\s*\d{4}\/\d{2}\/\d{2}/.test(v);
+          });
+          if (!dateInput) return false;
+          const nativeSet = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+          if (nativeSet) nativeSet.call(dateInput, val);
+          else dateInput.value = val;
+          dateInput.dispatchEvent(new Event('input', { bubbles: true }));
+          dateInput.dispatchEvent(new Event('change', { bubbles: true }));
+          return true;
+        }, rangeStr).catch(() => false);
+        if (done) break;
+      }
+    }
+
+    // Click submit/search button to apply the date
+    const submitted = await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll('button'));
+      const submit = btns.find((b) => {
+        const t = (b.textContent || '').toLowerCase().trim();
+        return t === 'search' || t === 'submit' || t === 'filter' || t === 'apply' || b.type === 'submit';
+      });
+      if (submit) { submit.click(); return true; }
+      const forms = document.querySelectorAll('form');
+      if (forms.length) { forms[0].dispatchEvent(new Event('submit', { bubbles: true })); return true; }
+      return false;
+    });
+
+    if (!submitted) {
+      this.logger.warn('ONEOPSPORTAL: no submit button found, trying Enter key');
+      const input = page.locator('input').filter({ hasText: /\d{4}\/\d{2}\/\d{2}/ }).first();
+      await input.press('Enter').catch(() => {});
+    }
+
+    await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+    await page.waitForTimeout(2000);
+
+    this.logger.log(`ONEOPSPORTAL: date set to ${rangeStr}`);
   }
 
   async runRefresh(

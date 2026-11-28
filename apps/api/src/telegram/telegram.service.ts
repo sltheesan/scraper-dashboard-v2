@@ -519,7 +519,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       if (period === 'yesterday') {
-        const yResult = await this.scrapesService.fetchYesterday(profile);
+        const yResult = await this.scrapesService.fetchYesterday(profile, true);
         if (yResult.cached) {
           cached = true;
           result = { loggedIn: true };

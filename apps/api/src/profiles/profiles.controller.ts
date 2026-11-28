@@ -203,7 +203,7 @@ export class ProfilesController {
 
     let result: any;
     if (period === 'yesterday') {
-      result = await this.scrapes.fetchYesterday(profile);
+      result = await this.scrapes.fetchYesterday(profile, true);
     } else {
       result = await this.scrapes.runAndSave(profile, period);
     }
