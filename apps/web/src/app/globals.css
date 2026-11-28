@@ -376,8 +376,20 @@ button:active:not(:disabled) { transform: scale(0.97); }
   --warning: #d97706;
 }
 
-:root[data-theme="light"] .log-viewer {
-  background: #fafbfc;
+:root[data-theme="light"] .logs-container {
+  background: #f7f8fa;
+}
+
+:root[data-theme="light"] .logs-row.even {
+  background: rgba(0, 0, 0, 0.018);
+}
+
+:root[data-theme="light"] .logs-row:hover {
+  background: rgba(0, 0, 0, 0.035);
+}
+
+:root[data-theme="light"] .logs-row.even:hover {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .page-body {
@@ -1724,54 +1736,273 @@ tr:hover td { background: var(--surface-hover); }
   gap: 8px;
 }
 
-.log-viewer {
+/* ─── Logs Page ────────────────────────────────────── */
+
+.logs-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 52px - 56px);
+  gap: 0;
+}
+
+.logs-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.logs-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.logs-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logs-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.logs-status.online { color: var(--success); }
+.logs-status.offline { color: var(--error); }
+
+.logs-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.logs-status.online .logs-status-dot {
+  box-shadow: 0 0 6px currentColor;
+  animation: logs-pulse 2s ease-in-out infinite;
+}
+
+@keyframes logs-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.logs-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.logs-search-icon {
+  position: absolute;
+  left: 8px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.logs-search {
+  height: 30px;
+  width: 180px;
+  padding: 0 28px 0 28px;
+  font-size: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.logs-search:focus {
+  border-color: var(--accent);
+}
+
+.logs-search-clear {
+  position: absolute;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 3px;
+}
+
+.logs-search-clear:hover { color: var(--text); }
+
+.logs-filter-select {
+  height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  outline: none;
+  cursor: pointer;
+}
+
+.logs-filter-select:focus { border-color: var(--accent); }
+
+.logs-reset-btn {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 500;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.logs-reset-btn:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.logs-event-count {
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.logs-filter-count {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.logs-action-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.logs-action-btn:hover {
+  color: var(--text);
+  border-color: var(--muted);
+}
+
+.logs-action-btn.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-alpha);
+}
+
+/* ── Log container ── */
+
+.logs-container {
   flex: 1;
-  background: #0a0c0f;
+  background: #08090c;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px 16px;
   overflow-y: auto;
-  font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  font-size: 13px;
-  line-height: 1.7;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', 'Consolas', monospace;
+  font-size: 12.5px;
+  line-height: 1;
 }
 
-.log-empty {
-  color: var(--muted);
-  text-align: center;
-  padding: 40px;
-}
-
-.log-line {
+.logs-empty {
   display: flex;
-  gap: 10px;
-  padding: 1px 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  padding: 60px 20px;
+  font-size: 13px;
+  font-family: inherit;
 }
 
-.log-time {
+.logs-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 14px;
+  transition: background 0.1s;
+}
+
+.logs-row:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.logs-row.even {
+  background: rgba(255, 255, 255, 0.012);
+}
+
+.logs-row.even:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.logs-row-time {
   color: var(--muted);
   flex-shrink: 0;
-  opacity: 0.6;
+  font-size: 11px;
+  opacity: 0.7;
+  min-width: 64px;
 }
 
-.log-type {
+.logs-row-time.dim {
+  opacity: 0.25;
+}
+
+.logs-row-badge {
   flex-shrink: 0;
-  font-weight: 600;
-  min-width: 72px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  min-width: 52px;
+  text-align: center;
+  line-height: 1.4;
 }
 
-.log-profile {
+.logs-row-profile {
+  flex-shrink: 0;
+  font-size: 11.5px;
   color: var(--accent);
-  flex-shrink: 0;
+  opacity: 0.85;
+  font-weight: 500;
 }
 
-.log-profile::before { content: '['; }
-.log-profile::after { content: ']'; }
-
-.log-msg {
+.logs-row-msg {
   color: var(--text);
+  opacity: 0.88;
   word-break: break-word;
+  font-size: 12.5px;
 }
+
+/* Legacy classes kept for backwards compat */
+.log-viewer { display: none; }
 
 /* ─── Filter Bar ───────────────────────────────────── */
 
@@ -2100,18 +2331,28 @@ tr:hover td { background: var(--surface-hover); }
     height: calc(100vh - 56px - 32px);
   }
 
-  .log-line {
+  .logs-toolbar {
+    gap: 8px;
+  }
+
+  .logs-search {
+    width: 140px;
+  }
+
+  .logs-row {
     flex-wrap: wrap;
-    gap: 4px 10px;
+    gap: 4px 8px;
+    padding: 5px 10px;
   }
 
-  .log-time {
-    font-size: 11px;
+  .logs-row-time {
+    font-size: 10px;
+    min-width: 56px;
   }
 
-  .log-type {
-    min-width: unset;
-    font-size: 12px;
+  .logs-row-badge {
+    font-size: 9px;
+    min-width: 42px;
   }
 
   .cell-actions {

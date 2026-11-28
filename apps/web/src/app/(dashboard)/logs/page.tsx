@@ -7,22 +7,33 @@ import { useAuth } from '@/contexts/auth-context';
 
 interface LogEvent {
   id: string;
-  type: 'info' | 'success' | 'error' | 'warning' | 'debug';
+  type: 'info' | 'success' | 'error' | 'warning' | 'debug' | string;
   message: string;
   profile?: string;
   timestamp: string;
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  info: 'var(--muted)',
-  success: 'var(--success)',
-  error: 'var(--error)',
-  warning: 'var(--warning)',
-  debug: 'var(--accent)',
+const TYPE_META: Record<string, { label: string; color: string; bg: string }> = {
+  telegram: { label: 'TG', color: '#58a6ff', bg: 'rgba(88,166,255,.12)' },
+  fetch:    { label: 'FETCH', color: 'var(--success)', bg: 'rgba(52,211,153,.10)' },
+  refresh:  { label: 'REFRESH', color: '#a78bfa', bg: 'rgba(167,139,250,.10)' },
+  error:    { label: 'ERROR', color: 'var(--error)', bg: 'rgba(255,93,93,.10)' },
+  alert:    { label: 'ALERT', color: 'var(--warning)', bg: 'rgba(251,191,36,.10)' },
+  scheduler:{ label: 'SCHED', color: '#f472b6', bg: 'rgba(244,114,182,.10)' },
+  info:     { label: 'INFO', color: 'var(--muted)', bg: 'rgba(138,146,158,.08)' },
+  success:  { label: 'OK', color: 'var(--success)', bg: 'rgba(52,211,153,.10)' },
+  warning:  { label: 'WARN', color: 'var(--warning)', bg: 'rgba(251,191,36,.10)' },
+  debug:    { label: 'DEBUG', color: 'var(--accent)', bg: 'rgba(79,140,255,.08)' },
 };
 
 function formatTime(d: string) {
   return new Date(d).toLocaleTimeString('en-GB', { timeZone: 'Asia/Bangkok', hour12: false });
+}
+
+function formatTimeShort(d: string) {
+  return new Date(d).toLocaleTimeString('en-GB', {
+    timeZone: 'Asia/Bangkok', hour12: false, hour: '2-digit', minute: '2-digit',
+  });
 }
 
 export default function LogsPage() {
@@ -35,7 +46,6 @@ export default function LogsPage() {
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [profileFilter, setProfileFilter] = useState('ALL');
   const containerRef = useRef<HTMLDivElement>(null);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   const logTypes = useMemo(() => [...new Set(logs.map((l) => l.type))].sort(), [logs]);
   const logProfiles = useMemo(() => [...new Set(logs.map((l) => l.profile).filter(Boolean))].sort() as string[], [logs]);
@@ -53,18 +63,12 @@ export default function LogsPage() {
   const hasFilters = search || typeFilter !== 'ALL' || profileFilter !== 'ALL';
 
   useEffect(() => {
-    if (!hasPrivilege('logs.view')) {
-      router.replace('/');
-      return;
-    }
-    api.get<LogEvent[]>('/logs/recent')
-      .then((data) => setLogs(data))
-      .catch(() => {});
+    if (!hasPrivilege('logs.view')) { router.replace('/'); return; }
+    api.get<LogEvent[]>('/logs/recent').then(setLogs).catch(() => {});
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     const url = `/api/logs/stream${token ? `?token=${token}` : ''}`;
     const es = new EventSource(url);
-    eventSourceRef.current = es;
 
     es.onopen = () => setConnected(true);
     es.onmessage = (event) => {
@@ -91,90 +95,128 @@ export default function LogsPage() {
     if (autoScroll && !atBottom) setAutoScroll(false);
   }
 
+  const typeCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of logs) counts[l.type] = (counts[l.type] || 0) + 1;
+    return counts;
+  }, [logs]);
+
   return (
-    <div className="flex flex-col" style={{ height: 'calc(100vh - 52px - 56px)' }}>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-3 shrink-0">
-        <div className="flex items-center text-sm">
-          <span className={`status-dot ${connected ? 'status-logged_in' : 'status-error'}`} />
-          {connected ? 'Connected' : 'Disconnected'}
-          <span className="cell-muted ml-3">{logs.length} events</span>
+    <div className="logs-page">
+      {/* ── Toolbar ── */}
+      <div className="logs-toolbar">
+        <div className="logs-toolbar-left">
+          <div className={`logs-status ${connected ? 'online' : 'offline'}`}>
+            <span className="logs-status-dot" />
+            <span>{connected ? 'Live' : 'Disconnected'}</span>
+          </div>
+
+          <div className="logs-search-wrap">
+            <svg className="logs-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input
+              type="text"
+              placeholder="Filter logs…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="logs-search"
+            />
+            {search && (
+              <button className="logs-search-clear" onClick={() => setSearch('')}>&times;</button>
+            )}
+          </div>
+
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="logs-filter-select"
+          >
+            <option value="ALL">All types</option>
+            {logTypes.map((t) => {
+              const meta = TYPE_META[t];
+              return <option key={t} value={t}>{(meta?.label || t).toUpperCase()} ({typeCounts[t] || 0})</option>;
+            })}
+          </select>
+
+          {logProfiles.length > 0 && (
+            <select
+              value={profileFilter}
+              onChange={(e) => setProfileFilter(e.target.value)}
+              className="logs-filter-select"
+            >
+              <option value="ALL">All profiles</option>
+              {logProfiles.map((p) => <option key={p} value={p}>{p}</option>)}
+            </select>
+          )}
+
+          {hasFilters && (
+            <button
+              className="logs-reset-btn"
+              onClick={() => { setSearch(''); setTypeFilter('ALL'); setProfileFilter('ALL'); }}
+            >
+              Reset
+            </button>
+          )}
         </div>
-        <div className="flex gap-2">
+
+        <div className="logs-toolbar-right">
+          {hasFilters && (
+            <span className="logs-filter-count">{filteredLogs.length} / {logs.length}</span>
+          )}
+          <span className="logs-event-count">{logs.length} events</span>
           <button
-            className={`btn btn-sm ${autoScroll ? 'btn-primary' : 'btn-ghost'}`}
+            className={`logs-action-btn ${autoScroll ? 'active' : ''}`}
             onClick={() => {
               setAutoScroll(!autoScroll);
               if (!autoScroll && containerRef.current) {
                 containerRef.current.scrollTop = containerRef.current.scrollHeight;
               }
             }}
+            title={autoScroll ? 'Auto-scroll ON' : 'Auto-scroll OFF'}
           >
-            Auto-scroll {autoScroll ? 'ON' : 'OFF'}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
-          <button className="btn btn-sm btn-ghost" onClick={() => setLogs([])}>
-            Clear
+          <button
+            className="logs-action-btn"
+            onClick={() => setLogs([])}
+            title="Clear logs"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap items-center mb-2 shrink-0">
-        <input
-          type="text"
-          placeholder="Search logs…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="h-[30px] text-xs px-2.5 bg-bg border border-border rounded-sm w-48"
-        />
-        <select
-          value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          className="h-[30px] text-xs px-2 bg-bg border border-border rounded-sm"
-        >
-          <option value="ALL">All types</option>
-          {logTypes.map((t) => <option key={t} value={t}>{t.toUpperCase()}</option>)}
-        </select>
-        {logProfiles.length > 0 && (
-          <select
-            value={profileFilter}
-            onChange={(e) => setProfileFilter(e.target.value)}
-            className="h-[30px] text-xs px-2 bg-bg border border-border rounded-sm"
-          >
-            <option value="ALL">All profiles</option>
-            {logProfiles.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
-        )}
-        {hasFilters && (
-          <button
-            className="btn btn-sm btn-ghost text-xs"
-            onClick={() => { setSearch(''); setTypeFilter('ALL'); setProfileFilter('ALL'); }}
-          >
-            Reset
-          </button>
-        )}
-        {hasFilters && (
-          <span className="text-[11px] text-muted">{filteredLogs.length} / {logs.length}</span>
-        )}
-      </div>
-
-      <div className="log-viewer" ref={containerRef} onScroll={handleScroll}>
+      {/* ── Log viewer ── */}
+      <div className="logs-container" ref={containerRef} onScroll={handleScroll}>
         {filteredLogs.length === 0 ? (
-          <div className="log-empty">{hasFilters ? 'No logs match filters' : 'Waiting for log events…'}</div>
+          <div className="logs-empty">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" opacity="0.3"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+            <span>{hasFilters ? 'No logs match current filters' : 'Waiting for log events…'}</span>
+          </div>
         ) : (
-          filteredLogs.map((entry, i) => (
-            <div key={entry.id || i} className="log-line">
-              <span className="log-time">{formatTime(entry.timestamp)}</span>
-              <span
-                className="log-type"
-                style={{ color: TYPE_COLORS[entry.type] || 'var(--muted)' }}
-              >
-                [{entry.type.toUpperCase()}]
-              </span>
-              {entry.profile && (
-                <span className="log-profile">{entry.profile}</span>
-              )}
-              <span className="log-msg">{entry.message}</span>
-            </div>
-          ))
+          filteredLogs.map((entry, i) => {
+            const meta = TYPE_META[entry.type] || TYPE_META.info!;
+            const prevTime = i > 0 ? formatTimeShort(filteredLogs[i - 1].timestamp) : '';
+            const thisTime = formatTimeShort(entry.timestamp);
+            const dimTime = i > 0 && prevTime === thisTime;
+
+            return (
+              <div key={entry.id || i} className={`logs-row ${i % 2 === 0 ? 'even' : ''}`}>
+                <span className={`logs-row-time ${dimTime ? 'dim' : ''}`}>
+                  {formatTime(entry.timestamp)}
+                </span>
+                <span
+                  className="logs-row-badge"
+                  style={{ color: meta.color, background: meta.bg }}
+                >
+                  {(meta.label || entry.type).toUpperCase()}
+                </span>
+                {entry.profile && (
+                  <span className="logs-row-profile">{entry.profile}</span>
+                )}
+                <span className="logs-row-msg">{entry.message}</span>
+              </div>
+            );
+          })
         )}
       </div>
     </div>
