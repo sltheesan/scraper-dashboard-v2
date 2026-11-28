@@ -57,7 +57,7 @@ These were identified in a pentest of v1 production and fixed in v2:
 
 | ID | Severity | Issue | v2 Status |
 |---|---|---|---|
-| SCRP-01 | CRITICAL | Unauthenticated VNC at `/vnc/` | N/A — no VNC in v2 |
+| SCRP-01 | CRITICAL | Unauthenticated VNC at `/vnc/` | Fixed — v2 VNC behind JWT token auth + single-user session lock |
 | SCRP-02 | CRITICAL | Full app.js served pre-auth | Fixed — Next.js code-splits by route |
 | SCRP-03 | HIGH | No rate limiting on login | Fixed — ThrottlerGuard (5/min) |
 | SCRP-04 | HIGH | SSRF via loginUrl/targetUrl/proxy | Fixed — URL validator blocks private IPs |

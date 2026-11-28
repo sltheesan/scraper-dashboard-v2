@@ -44,6 +44,7 @@ interface FetchResultData {
   scrape?: ScrapeData;
   conversions?: { totalDepositAmount?: string[]; totalWithdrawalAmount?: string[] };
   fetchedAt?: string;
+  yesterday?: ScrapeData;
 }
 
 function formatReportDate(s?: string): string {
@@ -63,6 +64,20 @@ function fmt(n?: number | string): string {
   const num = typeof n === 'string' ? parseFloat(n) : n;
   if (isNaN(num)) return '—';
   return num.toLocaleString('en-US');
+}
+
+function DeltaBadge({ current, previous }: { current?: number | string; previous?: number | string }) {
+  const cur = typeof current === 'string' ? parseFloat(current) : (current ?? 0);
+  const prev = typeof previous === 'string' ? parseFloat(previous) : (previous ?? 0);
+  if (!prev || isNaN(cur) || isNaN(prev)) return null;
+  const pct = ((cur - prev) / Math.abs(prev)) * 100;
+  if (!isFinite(pct) || Math.abs(pct) < 0.1) return null;
+  const up = pct > 0;
+  return (
+    <span className={`text-[11px] font-semibold ml-1.5 ${up ? 'text-success' : 'text-error'}`}>
+      {up ? '▲' : '▼'}{Math.abs(pct).toFixed(1)}%
+    </span>
+  );
 }
 
 interface DataField {
@@ -393,6 +408,7 @@ export default function ProfilesPage() {
           scrape: result.scrape,
           conversions: result.conversions,
           fetchedAt: result.fetchedAt,
+          yesterday: result.yesterday,
         });
       }
     } catch (err: any) {
@@ -416,7 +432,17 @@ export default function ProfilesPage() {
     }
   }
 
-  if (loading) return <div className="flex items-center justify-center py-20"><div className="spinner" /></div>;
+  if (loading) return (
+    <div className="space-y-3">
+      <div className="flex justify-between items-center">
+        <div className="skeleton skeleton-text" />
+        <div className="skeleton" style={{ width: 120, height: 34 }} />
+      </div>
+      <div className="table-wrap">
+        {[...Array(8)].map((_, i) => <div key={i} className="skeleton skeleton-row" />)}
+      </div>
+    </div>
+  );
 
   return (
     <div>
@@ -866,30 +892,48 @@ export default function ProfilesPage() {
               <div className="fetch-card-grid">
                 <div className="fetch-card-metric">
                   <span className="fetch-card-label">New Registration Count</span>
-                  <span className="fetch-card-value">{fmt(fetchResult.scrape.newRegistrationCount)}</span>
+                  <span className="fetch-card-value">
+                    {fmt(fetchResult.scrape.newRegistrationCount)}
+                    <DeltaBadge current={fetchResult.scrape.newRegistrationCount} previous={fetchResult.yesterday?.newRegistrationCount} />
+                  </span>
                 </div>
                 <div className="fetch-card-metric">
                   <span className="fetch-card-label">New Deposit Count</span>
-                  <span className="fetch-card-value">{fmt(fetchResult.scrape.newDepositCount)}</span>
+                  <span className="fetch-card-value">
+                    {fmt(fetchResult.scrape.newDepositCount)}
+                    <DeltaBadge current={fetchResult.scrape.newDepositCount} previous={fetchResult.yesterday?.newDepositCount} />
+                  </span>
                 </div>
                 <div className="fetch-card-metric">
                   <span className="fetch-card-label">Total Deposit Count</span>
-                  <span className="fetch-card-value">{fmt(fetchResult.scrape.totalDepositCount)}</span>
+                  <span className="fetch-card-value">
+                    {fmt(fetchResult.scrape.totalDepositCount)}
+                    <DeltaBadge current={fetchResult.scrape.totalDepositCount} previous={fetchResult.yesterday?.totalDepositCount} />
+                  </span>
                 </div>
                 <div className="fetch-card-metric">
                   <span className="fetch-card-label">Total Deposit Amount</span>
-                  <span className="fetch-card-value amount">{fmt(fetchResult.scrape.totalDepositAmount)}</span>
+                  <span className="fetch-card-value amount">
+                    {fmt(fetchResult.scrape.totalDepositAmount)}
+                    <DeltaBadge current={fetchResult.scrape.totalDepositAmount} previous={fetchResult.yesterday?.totalDepositAmount} />
+                  </span>
                   {fetchResult.conversions?.totalDepositAmount?.length ? (
                     <span className="fetch-card-conv">{fetchResult.conversions.totalDepositAmount.join(' · ')}</span>
                   ) : null}
                 </div>
                 <div className="fetch-card-metric">
                   <span className="fetch-card-label">Total Withdrawal Count</span>
-                  <span className="fetch-card-value">{fmt(fetchResult.scrape.totalWithdrawalCount)}</span>
+                  <span className="fetch-card-value">
+                    {fmt(fetchResult.scrape.totalWithdrawalCount)}
+                    <DeltaBadge current={fetchResult.scrape.totalWithdrawalCount} previous={fetchResult.yesterday?.totalWithdrawalCount} />
+                  </span>
                 </div>
                 <div className="fetch-card-metric">
                   <span className="fetch-card-label">Total Withdrawal Amount</span>
-                  <span className="fetch-card-value amount">{fmt(fetchResult.scrape.totalWithdrawalAmount)}</span>
+                  <span className="fetch-card-value amount">
+                    {fmt(fetchResult.scrape.totalWithdrawalAmount)}
+                    <DeltaBadge current={fetchResult.scrape.totalWithdrawalAmount} previous={fetchResult.yesterday?.totalWithdrawalAmount} />
+                  </span>
                   {fetchResult.conversions?.totalWithdrawalAmount?.length ? (
                     <span className="fetch-card-conv">{fetchResult.conversions.totalWithdrawalAmount.join(' · ')}</span>
                   ) : null}
@@ -907,6 +951,7 @@ export default function ProfilesPage() {
 
             <div className="fetch-card-foot">
               <span className="fetch-card-dot" /> Scraper Dashboard · live fetch
+              {fetchResult.yesterday && <span className="text-[11px] text-muted ml-2">· deltas vs yesterday</span>}
               <button className="btn btn-primary ml-auto" onClick={() => setFetchResult(null)}>Close</button>
             </div>
           </div>

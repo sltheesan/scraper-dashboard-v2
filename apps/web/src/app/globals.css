@@ -434,6 +434,7 @@ button:active:not(:disabled) { transform: scale(0.97); }
 
 table {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
 }
 
@@ -495,6 +496,47 @@ tr:hover td { background: var(--surface-hover); }
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.activity-date-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.date-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.date-label input[type="date"] {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  outline: none;
+}
+
+.date-label input[type="date"]:focus {
+  border-color: var(--accent);
+}
+
+.date-presets {
+  display: flex;
+  gap: 4px;
 }
 
 .filter-select {
@@ -894,6 +936,34 @@ tr:hover td { background: var(--surface-hover); }
   min-height: 100vh;
   display: grid;
   place-items: center;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--border) 25%, var(--surface-hover) 50%, var(--border) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius);
+}
+.skeleton-card {
+  height: 100px;
+}
+.skeleton-row {
+  height: 48px;
+  margin-bottom: 2px;
+}
+.skeleton-text {
+  height: 14px;
+  width: 60%;
+  margin: 6px 0;
+}
+.skeleton-text-short {
+  height: 14px;
+  width: 35%;
+  margin: 6px 0;
 }
 
 .spinner {
@@ -1593,6 +1663,19 @@ tr:hover td { background: var(--surface-hover); }
 
 /* ─── Responsive: Tablet ───────────────────────────── */
 
+/* ─── Responsive: Tablet ─────────────────────────── */
+
+@media (max-width: 1024px) {
+  .fetch-card {
+    max-width: calc(100vw - 48px);
+  }
+  .modal-card {
+    max-width: calc(100vw - 48px);
+  }
+}
+
+/* ─── Responsive: Mobile ─────────────────────────── */
+
 @media (max-width: 768px) {
   .sidebar { width: 60px; }
   .sidebar-brand span:last-child,
@@ -1612,7 +1695,8 @@ tr:hover td { background: var(--surface-hover); }
   .top-bar-right { gap: 10px; }
 
   .modal-card {
-    padding: 20px;
+    padding: 16px;
+    max-width: calc(100vw - 24px);
     max-height: calc(100vh - 24px);
   }
 
@@ -1621,7 +1705,8 @@ tr:hover td { background: var(--surface-hover); }
   }
 
   .fetch-card {
-    padding: 20px;
+    padding: 16px;
+    max-width: calc(100vw - 24px);
   }
 
   .fetch-card-name {
@@ -1660,6 +1745,15 @@ tr:hover td { background: var(--surface-hover); }
   }
 
   .activity-filters {
+    flex-wrap: wrap;
+  }
+
+  .activity-date-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-range-inputs {
     flex-wrap: wrap;
   }
 

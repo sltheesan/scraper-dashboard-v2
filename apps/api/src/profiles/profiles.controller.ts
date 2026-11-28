@@ -238,6 +238,20 @@ export class ProfilesController {
         };
       }
       result.fetchedAt = result.scrape.updatedAt || result.scrape.createdAt || new Date().toISOString();
+
+      if (period === 'today') {
+        const yScrape = await this.scrapes.getYesterday(id);
+        if (yScrape) {
+          result.yesterday = {
+            totalDepositAmount: yScrape.totalDepositAmount,
+            totalWithdrawalAmount: yScrape.totalWithdrawalAmount,
+            newRegistrationCount: yScrape.newRegistrationCount,
+            newDepositCount: yScrape.newDepositCount,
+            totalDepositCount: yScrape.totalDepositCount,
+            totalWithdrawalCount: yScrape.totalWithdrawalCount,
+          };
+        }
+      }
     }
 
     return result;

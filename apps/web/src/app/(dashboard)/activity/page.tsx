@@ -41,6 +41,8 @@ export default function ActivityPage() {
   const [actions, setActions] = useState<string[]>([]);
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const limit = 50;
@@ -54,7 +56,11 @@ export default function ActivityPage() {
     api.get<string[]>('/activity/actions').then(setActions).catch(() => {});
   }, [hasPrivilege, router]);
 
-  async function loadActivity(p: number, actorType: string, action: string, q: string) {
+  function toDateStr(d: Date) {
+    return d.toISOString().slice(0, 10);
+  }
+
+  async function loadActivity(p: number, actorType: string, action: string, q: string, from?: string, to?: string) {
     setLoading(true);
     setError('');
     try {
@@ -62,6 +68,8 @@ export default function ActivityPage() {
       if (actorType !== 'ALL') params.set('actorType', actorType);
       if (action !== 'ALL') params.set('action', action);
       if (q.trim()) params.set('search', q.trim());
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
       const res = await api.get<ActivityResponse>(`/activity?${params}`);
       setEntries(res.items);
       setTotal(res.total);
@@ -74,8 +82,8 @@ export default function ActivityPage() {
   }
 
   useEffect(() => {
-    loadActivity(1, filter, actionFilter, search);
-  }, [filter, actionFilter, search]);
+    loadActivity(1, filter, actionFilter, search, dateFrom, dateTo);
+  }, [filter, actionFilter, search, dateFrom, dateTo]);
 
   function handleSearchInput(val: string) {
     setSearchInput(val);
@@ -127,10 +135,41 @@ export default function ActivityPage() {
             )}
           </div>
         </div>
+
+        <div className="activity-date-filters">
+          <div className="date-range-inputs">
+            <label className="date-label">
+              From
+              <input type="date" className="filter-input" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1); }} />
+            </label>
+            <label className="date-label">
+              To
+              <input type="date" className="filter-input" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1); }} />
+            </label>
+            {(dateFrom || dateTo) && (
+              <button className="btn btn-sm btn-ghost" onClick={() => { setDateFrom(''); setDateTo(''); setPage(1); }}>Clear</button>
+            )}
+          </div>
+          <div className="date-presets">
+            <button className={`btn btn-sm ${dateFrom === toDateStr(new Date()) && !dateTo ? 'btn-primary' : 'btn-ghost'}`} onClick={() => { setDateFrom(toDateStr(new Date())); setDateTo(''); setPage(1); }}>Today</button>
+            <button className="btn btn-sm btn-ghost" onClick={() => { const d = new Date(); d.setDate(d.getDate() - 7); setDateFrom(toDateStr(d)); setDateTo(toDateStr(new Date())); setPage(1); }}>7d</button>
+            <button className="btn btn-sm btn-ghost" onClick={() => { const d = new Date(); d.setDate(d.getDate() - 30); setDateFrom(toDateStr(d)); setDateTo(toDateStr(new Date())); setPage(1); }}>30d</button>
+          </div>
+        </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20"><div className="spinner" /></div>
+        <div className="skeleton-card" style={{ padding: '20px' }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="skeleton-row">
+              <div className="skeleton-text" style={{ width: '15%' }} />
+              <div className="skeleton-text" style={{ width: '10%' }} />
+              <div className="skeleton-text" style={{ width: '12%' }} />
+              <div className="skeleton-text" style={{ width: '20%' }} />
+              <div className="skeleton-text" style={{ width: '25%' }} />
+            </div>
+          ))}
+        </div>
       ) : entries.length === 0 ? (
         <div className="empty-state"><p>No activity logs found.</p></div>
       ) : (
@@ -172,7 +211,7 @@ export default function ActivityPage() {
             <button
               className="btn btn-sm btn-ghost"
               disabled={page <= 1}
-              onClick={() => loadActivity(page - 1, filter, actionFilter, search)}
+              onClick={() => loadActivity(page - 1, filter, actionFilter, search, dateFrom, dateTo)}
             >
               ← Prev
             </button>
@@ -182,7 +221,7 @@ export default function ActivityPage() {
             <button
               className="btn btn-sm btn-ghost"
               disabled={page >= totalPages}
-              onClick={() => loadActivity(page + 1, filter, actionFilter, search)}
+              onClick={() => loadActivity(page + 1, filter, actionFilter, search, dateFrom, dateTo)}
             >
               Next →
             </button>

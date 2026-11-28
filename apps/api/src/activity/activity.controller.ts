@@ -19,6 +19,8 @@ export class ActivityController {
     @Query('actorType') actorType?: ActorType,
     @Query('action') action?: string,
     @Query('search') search?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
   ) {
     return this.activity.getActivity({
       page: page ? parseInt(page, 10) : undefined,
@@ -26,6 +28,8 @@ export class ActivityController {
       actorType,
       action,
       search,
+      from,
+      to,
     });
   }
 

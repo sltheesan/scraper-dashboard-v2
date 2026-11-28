@@ -356,15 +356,15 @@ export default function ReportsPage() {
 
       {/* ── Filter bar ── */}
       <div className="bg-surface border border-border rounded p-3.5 mb-4">
-        <div className="flex gap-3 flex-wrap items-end">
-          <div className="min-w-[120px]">
+        <div className="flex gap-2.5 flex-wrap items-end">
+          <div className="min-w-[100px] flex-1 sm:flex-none sm:min-w-[120px]">
             <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">Platform</label>
             <select value={kindFilter} onChange={(e) => { setKindFilter(e.target.value); setSelectedProfiles([]); }} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2">
               <option value="ALL">All</option>
               {kinds.map((k) => <option key={k} value={k}>{k}</option>)}
             </select>
           </div>
-          <div className="min-w-[110px]">
+          <div className="min-w-[90px] flex-1 sm:flex-none sm:min-w-[110px]">
             <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">Date</label>
             <select value={dateMode} onChange={(e) => setDateMode(e.target.value as any)} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2">
               <option value="range">Range</option>
@@ -372,23 +372,23 @@ export default function ReportsPage() {
             </select>
           </div>
           {dateMode === 'single' ? (
-            <div className="min-w-[150px]">
+            <div className="min-w-[130px] flex-1 sm:flex-none sm:min-w-[150px]">
               <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">Date</label>
               <input type="date" value={singleDate} onChange={(e) => setSingleDate(e.target.value)} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2" />
             </div>
           ) : (
             <>
-              <div className="min-w-[150px]">
+              <div className="min-w-[130px] flex-1 sm:flex-none sm:min-w-[150px]">
                 <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">From</label>
                 <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2" />
               </div>
-              <div className="min-w-[150px]">
+              <div className="min-w-[130px] flex-1 sm:flex-none sm:min-w-[150px]">
                 <label className="text-[10px] font-semibold text-muted uppercase tracking-wide block mb-1">To</label>
                 <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className="w-full h-[34px] bg-bg border border-border rounded-sm text-sm px-2" />
               </div>
             </>
           )}
-          <div className="flex gap-1 self-end">
+          <div className="flex gap-1 self-end overflow-x-auto flex-shrink-0">
             {[
               { l: 'Today', fn: () => { setDateMode('single'); setSingleDate(toDateStr(new Date())); } },
               { l: 'Yest', fn: () => { setDateMode('single'); const d = new Date(); d.setDate(d.getDate() - 1); setSingleDate(toDateStr(d)); } },

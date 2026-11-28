@@ -36,6 +36,8 @@ export class ActivityService {
     actorType?: ActorType;
     action?: string;
     search?: string;
+    from?: string;
+    to?: string;
   }) {
     const page = params.page ?? 1;
     const limit = params.limit ?? 50;
@@ -44,6 +46,15 @@ export class ActivityService {
     const where: any = {};
     if (params.actorType) where.actorType = params.actorType;
     if (params.action) where.action = params.action;
+    if (params.from || params.to) {
+      where.createdAt = {};
+      if (params.from) where.createdAt.gte = new Date(params.from);
+      if (params.to) {
+        const to = new Date(params.to);
+        to.setHours(23, 59, 59, 999);
+        where.createdAt.lte = to;
+      }
+    }
     if (params.search) {
       const q = params.search;
       where.OR = [

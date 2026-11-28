@@ -101,6 +101,18 @@ function Sparkline({ values, color, height = 28 }: { values: number[]; color: st
   );
 }
 
+function Delta({ current, previous, isCurrency = false }: { current: number; previous: number | null; isCurrency?: boolean }) {
+  if (previous === null || previous === 0) return null;
+  const pct = ((current - previous) / Math.abs(previous)) * 100;
+  if (!isFinite(pct) || Math.abs(pct) < 0.1) return null;
+  const up = pct > 0;
+  return (
+    <span className={`text-[11px] font-semibold ${up ? 'text-success' : 'text-error'}`}>
+      {up ? '▲' : '▼'} {Math.abs(pct).toFixed(1)}%
+    </span>
+  );
+}
+
 const STATUS_ORDER: Record<string, number> = { ACCESS_DENIED: 0, ERROR: 1, LOGGED_OUT: 2, SCRAPING: 3, LOGGED_IN: 4, IDLE: 5 };
 const ISSUE_STATUSES = ['LOGGED_OUT', 'ACCESS_DENIED', 'ERROR'];
 
@@ -169,16 +181,43 @@ export default function DashboardHome() {
   }, [todayScrapes]);
 
   const weekDaily = useMemo(() => {
-    const byDate: Record<string, { dep: number; wd: number; reg: number }> = {};
+    const byDate: Record<string, { dep: number; wd: number; reg: number; depCount: number; wdCount: number; newDep: number }> = {};
     for (const s of weekScrapes) {
       const d = s.reportDateString;
-      if (!byDate[d]) byDate[d] = { dep: 0, wd: 0, reg: 0 };
+      if (!byDate[d]) byDate[d] = { dep: 0, wd: 0, reg: 0, depCount: 0, wdCount: 0, newDep: 0 };
       byDate[d].dep += numVal(s.totalDepositAmount);
       byDate[d].wd += numVal(s.totalWithdrawalAmount);
       byDate[d].reg += numVal(s.newRegistrationCount);
+      byDate[d].depCount += numVal(s.totalDepositCount);
+      byDate[d].wdCount += numVal(s.totalWithdrawalCount);
+      byDate[d].newDep += numVal(s.newDepositCount);
     }
     return Object.entries(byDate).sort((a, b) => a[0].localeCompare(b[0]));
   }, [weekScrapes]);
+
+  const yesterdayTotals = useMemo(() => {
+    const now = new Date();
+    const y = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+    y.setDate(y.getDate() - 1);
+    const yStr = `${y.getFullYear()}-${String(y.getMonth() + 1).padStart(2, '0')}-${String(y.getDate()).padStart(2, '0')}`;
+    const entry = weekDaily.find(([d]) => d === yStr);
+    if (!entry) return null;
+    const v = entry[1];
+    return { dep: v.dep, wd: v.wd, net: v.dep - v.wd, depCount: v.depCount, wdCount: v.wdCount, newReg: v.reg, newDep: v.newDep };
+  }, [weekDaily]);
+
+  const platformSummary = useMemo(() => {
+    const byKind: Record<string, { dep: number; wd: number; reg: number; count: number }> = {};
+    for (const s of todayScrapes) {
+      const kind = s.profile.kind;
+      if (!byKind[kind]) byKind[kind] = { dep: 0, wd: 0, reg: 0, count: 0 };
+      byKind[kind].dep += numVal(s.totalDepositAmount);
+      byKind[kind].wd += numVal(s.totalWithdrawalAmount);
+      byKind[kind].reg += numVal(s.newRegistrationCount);
+      byKind[kind].count++;
+    }
+    return Object.entries(byKind).sort((a, b) => (b[1].dep - b[1].wd) - (a[1].dep - a[1].wd));
+  }, [todayScrapes]);
 
   const profilesWithToday = useMemo(() => {
     const scrapeMap: Record<string, TodayScrape> = {};
@@ -188,7 +227,21 @@ export default function DashboardHome() {
       .sort((a, b) => (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99) || a.name.localeCompare(b.name));
   }, [profiles, todayScrapes]);
 
-  if (loading) return <div className="flex items-center justify-center py-20"><div className="spinner" /></div>;
+  if (loading) return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {[...Array(4)].map((_, i) => <div key={i} className="skeleton skeleton-card" />)}
+      </div>
+      <div className="skeleton" style={{ height: 180 }} />
+      <div className="skeleton" style={{ height: 300 }} />
+    </div>
+  );
+
+  const lastScrapeTime = useMemo(() => {
+    const times = profiles.map(p => p.lastScrapeAt).filter(Boolean) as string[];
+    if (times.length === 0) return null;
+    return times.reduce((a, b) => (new Date(a) > new Date(b) ? a : b));
+  }, [profiles]);
 
   if (profiles.length === 0 && !hasPrivilege('profiles.view')) {
     return (
@@ -202,16 +255,32 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-4">
+      {/* ── Data freshness ── */}
+      {lastScrapeTime && (
+        <div className="flex items-center gap-2 text-xs text-muted">
+          <span className={`w-2 h-2 rounded-full shrink-0 ${
+            Date.now() - new Date(lastScrapeTime).getTime() < 3600_000 ? 'bg-success' :
+            Date.now() - new Date(lastScrapeTime).getTime() < 7200_000 ? 'bg-warning' : 'bg-error'
+          }`} />
+          <span>Last scraped {timeAgo(lastScrapeTime)}</span>
+          <span className="opacity-60">·</span>
+          <span className="opacity-60">{todayTotals.profiles}/{profiles.length} profiles scraped today</span>
+        </div>
+      )}
+
       {/* ── Row 1: Today's financial KPIs ── */}
       {todayScrapes.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {/* Net Flow hero */}
           <div className={`p-4 rounded-sm border ${
             todayTotals.net >= 0
               ? 'bg-[rgba(52,211,153,0.06)] border-[rgba(52,211,153,0.2)]'
               : 'bg-[rgba(239,68,68,0.06)] border-[rgba(239,68,68,0.2)]'
           }`}>
-            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Today Net Flow</div>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Today Net Flow</div>
+              {yesterdayTotals && <Delta current={todayTotals.net} previous={yesterdayTotals.net} isCurrency />}
+            </div>
             <div className={`text-2xl font-bold mt-0.5 tabular-nums ${todayTotals.net >= 0 ? 'text-success' : 'text-error'}`}>
               {todayTotals.net >= 0 ? '+' : ''}{fmtCurrency(todayTotals.net)}
             </div>
@@ -224,7 +293,10 @@ export default function DashboardHome() {
 
           {/* Deposits */}
           <div className="p-4 rounded-sm bg-surface border border-border">
-            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Deposits</div>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Deposits</div>
+              {yesterdayTotals && <Delta current={todayTotals.dep} previous={yesterdayTotals.dep} isCurrency />}
+            </div>
             <div className="text-xl font-bold mt-0.5 tabular-nums">{fmtCurrency(todayTotals.dep)}</div>
             <div className="text-[11px] text-muted mt-0.5 tabular-nums">{fmt(todayTotals.depCount)} txns</div>
             {weekDaily.length > 1 && (
@@ -234,7 +306,10 @@ export default function DashboardHome() {
 
           {/* Withdrawals */}
           <div className="p-4 rounded-sm bg-surface border border-border">
-            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Withdrawals</div>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Withdrawals</div>
+              {yesterdayTotals && <Delta current={todayTotals.wd} previous={yesterdayTotals.wd} isCurrency />}
+            </div>
             <div className="text-xl font-bold mt-0.5 tabular-nums">{fmtCurrency(todayTotals.wd)}</div>
             <div className="text-[11px] text-muted mt-0.5 tabular-nums">{fmt(todayTotals.wdCount)} txns</div>
             {weekDaily.length > 1 && (
@@ -244,7 +319,10 @@ export default function DashboardHome() {
 
           {/* New Registrations */}
           <div className="p-4 rounded-sm bg-surface border border-border">
-            <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Registrations</div>
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] font-semibold text-muted uppercase tracking-wide">Registrations</div>
+              {yesterdayTotals && <Delta current={todayTotals.newReg} previous={yesterdayTotals.newReg} />}
+            </div>
             <div className="text-xl font-bold mt-0.5">{fmt(todayTotals.newReg)}</div>
             <div className="text-[11px] text-muted mt-0.5">{fmt(todayTotals.newDep)} new deposits</div>
             {weekDaily.length > 1 && (
@@ -317,7 +395,40 @@ export default function DashboardHome() {
         )}
       </div>
 
-      {/* ── Row 3: Profile table + Activity sidebar ── */}
+      {/* ── Row 3: Platform summary ── */}
+      {platformSummary.length > 1 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {platformSummary.map(([kind, data]) => {
+            const net = data.dep - data.wd;
+            return (
+              <div key={kind} className="p-4 rounded-sm bg-surface border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`badge badge-${kind.toLowerCase()}`}>{kind}</span>
+                  <span className="text-[11px] text-muted">{data.count} profiles</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div>
+                    <div className="text-[10px] text-muted uppercase">Deposits</div>
+                    <div className="text-sm font-semibold tabular-nums">{fmtCompact(data.dep, true)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted uppercase">Withdrawals</div>
+                    <div className="text-sm font-semibold tabular-nums">{fmtCompact(data.wd, true)}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-muted uppercase">Net</div>
+                    <div className={`text-sm font-bold tabular-nums ${net >= 0 ? 'text-success' : 'text-error'}`}>
+                      {net >= 0 ? '+' : ''}{fmtCompact(net, true)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Row 4: Profile table + Activity sidebar ── */}
       <div className={`grid gap-4 ${activity.length > 0 ? 'grid-cols-1 lg:grid-cols-[1fr_320px]' : 'grid-cols-1'}`}>
         {/* Profile status table */}
         {profiles.length > 0 && (

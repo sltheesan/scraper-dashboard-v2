@@ -53,7 +53,9 @@ Entry: `src/main.ts` → sets `TZ=Asia/Bangkok`, global prefix `/api`, Swagger a
 | **PrismaModule** | `src/prisma/` | Global `PrismaService` (connects on init, disconnects on destroy) |
 | **AuthModule** | `src/auth/` | JWT login/register/logout, `JwtStrategy`, `JwtAuthGuard`, `RolesGuard` |
 | **ProfilesModule** | `src/profiles/` | Profile CRUD, login flow, fetch/yesterday endpoints, SSRF validation |
-| **CredentialsModule** | `src/credentials/` | AES-encrypted credentials (username/password/PIN), Gmail OTP reader |
+| **CredentialsModule** | `src/credentials/` | AES-encrypted credentials (username/password/PIN/TOTP), Gmail OTP reader, TOTP generation |
+| **VncModule** | `src/vnc/` | VNC session management: single-user lock, token auth, force end-session |
+| **HealthController** | `src/health.controller.ts` | Health check endpoint at `/api/health` (DB latency, uptime) |
 | **ScraperModule** | `src/scraper/` | Playwright browser pool, context management, page parsing |
 | **ScrapesModule** | `src/scrapes/` | Scrape CRUD, `runAndSave`, `fetchYesterday` (DB-first, browser fallback) |
 | **SchedulerModule** | `src/scheduler/` | Cron-based fetch + refresh schedules, per-profile running locks |
@@ -79,11 +81,21 @@ Entry: `src/main.ts` → sets `TZ=Asia/Bangkok`, global prefix `/api`, Swagger a
 - `POST /api/profiles/:id/login` — open browser login window
 - `POST /api/profiles/:id/login/finish` — save session cookies
 - `POST /api/profiles/:id/login/cancel` — close login window
-- `POST /api/profiles/:id/fetch` — fetch today/yesterday data
+- `POST /api/profiles/:id/fetch` — fetch today/yesterday data, returns `conversions` (USD/IDR labels) and `fetchedAt`
 
 **Credentials:**
-- `GET|PUT|DELETE /api/profiles/:id/credentials` — encrypted credential CRUD
+- `GET|PUT|DELETE /api/profiles/:id/credentials` — encrypted credential CRUD (username, password, PIN, TOTP secret, OTP email)
 - `POST /api/profiles/:id/credentials/otp` — fetch OTP from Gmail
+- `POST /api/profiles/:id/credentials/totp` — generate current TOTP code from stored secret
+
+**VNC:**
+- `POST /api/vnc/token` — create VNC session token (single-user lock, blocks if another user is active)
+- `GET /api/vnc/session` — returns active VNC session status (userName, profileName, isOwner)
+- `POST /api/vnc/end-session` — force-ends active VNC session (any user can call)
+- `GET /api/vnc/auth` — validates token from `X-Forwarded-Uri` header
+
+**Health:**
+- `GET /api/health` — returns `{ status, uptime, dbLatencyMs, timestamp }`
 
 **Settings:**
 - `GET|PATCH /api/settings/scheduler` — scheduler config
@@ -102,8 +114,9 @@ Entry: `src/main.ts` → sets `TZ=Asia/Bangkok`, global prefix `/api`, Swagger a
 ### Auth & RBAC
 
 - JWT Bearer token via `@nestjs/passport` + `passport-jwt`.
-- Three roles: `ADMIN`, `OPERATOR`, `VIEWER`.
-- Guards: `JwtAuthGuard` (authenticated?), `RolesGuard` + `@Roles(...)` (has role?).
+- Privilege-based via user groups, `hasPrivilege()` function, `isSuperAdmin` boolean.
+- Guards: `JwtAuthGuard` (authenticated?), `PrivilegesGuard` + `@Privileges(...)` (has privilege?). SuperAdmin bypasses all privilege checks.
+- JWT payload: `sub` (user id), `email`, `isSuperAdmin`, `privileges[]` — does NOT contain `name`.
 
 ### Security
 
@@ -111,7 +124,10 @@ Entry: `src/main.ts` → sets `TZ=Asia/Bangkok`, global prefix `/api`, Swagger a
 - **SSRF prevention:** `src/common/url-validator.ts` blocks private IPs (10.x, 172.16-31.x, 192.168.x, 127.x), link-local (169.254.x), metadata endpoints, localhost. Applied to `loginUrl`, `targetUrl`, `proxy` on profile create/update.
 - **Security headers:** `helmet` middleware (X-Frame-Options, X-Content-Type-Options, HSTS, etc.). CSP relaxed for dashboard frontend.
 - **CORS:** Allowlist via `CORS_ORIGIN` env var (defaults to `http://localhost:3000`).
-- **Credentials encryption:** AES-256-CBC keyed by `ENCRYPTION_KEY` env var.
+- **Credentials encryption:** AES-256-CBC keyed by `ENCRYPTION_KEY` env var. ENCRYPTION_KEY must be a 64-char hex string; otherwise falls back to `Buffer.alloc(32, key)`.
+- **Swagger:** Disabled when `NODE_ENV=production`.
+- **Body parser limits:** 2MB global, 100MB on `/api/backup`.
+- **VNC session lock:** Single-user access with token TTL (5 min), any user can force-end.
 
 ---
 
@@ -166,8 +182,8 @@ Schema: `prisma/schema.prisma`. Client exported from `src/index.ts` as `@scraper
 | Model | Table | Key fields |
 |---|---|---|
 | **User** | `users` | `email`(unique), `name`, `passwordHash`, `role`(ADMIN\|OPERATOR\|VIEWER), `isActive` |
-| **Profile** | `profiles` | `name`(unique), `kind`(CGAMING\|ZOOMWLB), `loginUrl`, `targetUrl`, `status`, `proxy`, `buttonSelector`, `dataFields` |
-| **ProfileCredential** | `profile_credentials` | 1:1 with Profile. `usernameEncrypted`, `passwordEncrypted`, `pinEncrypted`, `otpEmail` |
+| **Profile** | `profiles` | `name`(unique), `kind`(CGAMING\|ZOOMWLB\|ONEOPSPORTAL), `loginUrl`, `targetUrl`, `status`, `proxy`, `buttonSelector`, `dataFields` |
+| **ProfileCredential** | `profile_credentials` | 1:1 with Profile. `usernameEncrypted`, `passwordEncrypted`, `pinEncrypted`, `totpSecretEncrypted`, `otpEmail` |
 | **Scrape** | `scrapes` | `profileId`+`reportDate`(unique). 6 metrics: registration/deposit/withdrawal counts+amounts. `raw`/`data`/`tables` JSON. |
 | **Setting** | `settings` | `key`(unique), `value`(JSON). Keys: `scheduler`, `telegram`, `platform` |
 | **ActivityLog** | `activity_logs` | `actorType`(ADMIN\|USER\|TELEGRAM\|SYSTEM), `actorId`, `action`, `target`, `details`, `meta` |
@@ -208,7 +224,8 @@ Schema: `prisma/schema.prisma`. Client exported from `src/index.ts` as `@scraper
 
 ### Encrypted Storage (`src/credentials/credentials.service.ts`)
 - AES-256-CBC encryption with `ENCRYPTION_KEY` env var
-- Stores username, password, PIN (encrypted), and OTP email (plain)
+- Stores username, password, PIN, TOTP secret (encrypted), and OTP email (plain)
+- TOTP generation via `otpauth` library (Base32 secret, 6-digit, 30s period, SHA1)
 
 ### Gmail OTP Reader (`src/credentials/gmail-otp.service.ts`)
 - OAuth2 refresh token flow (GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN)
@@ -222,9 +239,15 @@ Schema: `prisma/schema.prisma`. Client exported from `src/index.ts` as `@scraper
 
 - Long-polling (no SDK), inline keyboard for profile selection
 - Restricted mode (default: `true`) with allowedChatIds + allowedUsernames
-- PNG card rendering (`image-render.ts`) + HTML text formatting
+- PNG card rendering (`image-render.ts`) + HTML text formatting with currency conversions (USD/IDR) and fetch time
 - Session-expired and access-denied alerts to `alertChatIds`
 - Bot token stored in DB settings, updateable at runtime
+
+### Currency Conversion (`src/common/currency.ts`)
+- Platform currency mapping: CGAMING/ZOOMWLB → IDR, ONEOPSPORTAL → THB
+- Converts amounts to USD and IDR using live exchange rates from `open.er-api.com`
+- Rates cached for 4 hours
+- Used by: Telegram card rendering, fetch result popup (via profiles controller)
 
 ---
 
@@ -242,14 +265,21 @@ Schema: `prisma/schema.prisma`. Client exported from `src/index.ts` as `@scraper
 
 ## 9. Production Infrastructure
 
-v1 continues running at `https://scraper.200m.tech` until v2 is ready.
+v1 runs at `scraper.200m.tech`, v2 at `scraper-v2.200m.tech` (side by side).
 
 | Item | Value |
 |---|---|
-| **v1 domain** | `https://scraper.200m.tech` |
+| **v1 domain** | `https://scraper.200m.tech` (port 3000) |
+| **v2 domain** | `https://scraper-v2.200m.tech` (port 3001 web, 4001 api, 6090 noVNC) |
 | **VPS** | DigitalOcean SGP1, 8 vCPU, 16 GB RAM, IP `159.89.201.35` |
 | **v2 database** | DigitalOcean Managed PostgreSQL |
-| **Reverse proxy** | Caddy on VPS |
+| **Reverse proxy** | Caddy on VPS (auto HTTPS, `handle_path /vnc/*` for noVNC) |
+| **Docker** | `docker-compose.yml` — api (Playwright image + Xvfb/x11vnc/noVNC) + web (Node standalone) |
+| **VNC** | noVNC via websockify; Caddy strips `/vnc/` prefix; client must pass `path=vnc/websockify` |
+
+### Dashboard Layout Features
+- VNC session banner in layout — polls `/api/vnc/session` every 10s, shows active user + "End VNC Session" button
+- Fetch result popup — shows 6 metrics with USD/IDR currency conversions and fetch time
 
 ---
 

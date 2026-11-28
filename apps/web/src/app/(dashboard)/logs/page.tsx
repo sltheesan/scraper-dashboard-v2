@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
@@ -31,8 +31,26 @@ export default function LogsPage() {
   const [logs, setLogs] = useState<LogEvent[]>([]);
   const [autoScroll, setAutoScroll] = useState(true);
   const [connected, setConnected] = useState(false);
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('ALL');
+  const [profileFilter, setProfileFilter] = useState('ALL');
   const containerRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  const logTypes = useMemo(() => [...new Set(logs.map((l) => l.type))].sort(), [logs]);
+  const logProfiles = useMemo(() => [...new Set(logs.map((l) => l.profile).filter(Boolean))].sort() as string[], [logs]);
+
+  const filteredLogs = useMemo(() => {
+    const q = search.toLowerCase();
+    return logs.filter((l) => {
+      if (typeFilter !== 'ALL' && l.type !== typeFilter) return false;
+      if (profileFilter !== 'ALL' && l.profile !== profileFilter) return false;
+      if (q && !l.message.toLowerCase().includes(q) && !(l.profile || '').toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [logs, search, typeFilter, profileFilter]);
+
+  const hasFilters = search || typeFilter !== 'ALL' || profileFilter !== 'ALL';
 
   useEffect(() => {
     if (!hasPrivilege('logs.view')) {
@@ -99,11 +117,50 @@ export default function LogsPage() {
         </div>
       </div>
 
+      <div className="flex gap-2 flex-wrap items-center mb-2 shrink-0">
+        <input
+          type="text"
+          placeholder="Search logs…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="h-[30px] text-xs px-2.5 bg-bg border border-border rounded-sm w-48"
+        />
+        <select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          className="h-[30px] text-xs px-2 bg-bg border border-border rounded-sm"
+        >
+          <option value="ALL">All types</option>
+          {logTypes.map((t) => <option key={t} value={t}>{t.toUpperCase()}</option>)}
+        </select>
+        {logProfiles.length > 0 && (
+          <select
+            value={profileFilter}
+            onChange={(e) => setProfileFilter(e.target.value)}
+            className="h-[30px] text-xs px-2 bg-bg border border-border rounded-sm"
+          >
+            <option value="ALL">All profiles</option>
+            {logProfiles.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select>
+        )}
+        {hasFilters && (
+          <button
+            className="btn btn-sm btn-ghost text-xs"
+            onClick={() => { setSearch(''); setTypeFilter('ALL'); setProfileFilter('ALL'); }}
+          >
+            Reset
+          </button>
+        )}
+        {hasFilters && (
+          <span className="text-[11px] text-muted">{filteredLogs.length} / {logs.length}</span>
+        )}
+      </div>
+
       <div className="log-viewer" ref={containerRef} onScroll={handleScroll}>
-        {logs.length === 0 ? (
-          <div className="log-empty">Waiting for log events…</div>
+        {filteredLogs.length === 0 ? (
+          <div className="log-empty">{hasFilters ? 'No logs match filters' : 'Waiting for log events…'}</div>
         ) : (
-          logs.map((entry, i) => (
+          filteredLogs.map((entry, i) => (
             <div key={entry.id || i} className="log-line">
               <span className="log-time">{formatTime(entry.timestamp)}</span>
               <span
