@@ -47,6 +47,13 @@ interface FetchResultData {
   yesterday?: ScrapeData;
 }
 
+interface FullFetchResultData {
+  profileName: string;
+  profileKind: string;
+  today: { scrape?: ScrapeData; conversions?: { totalDepositAmount?: string[]; totalWithdrawalAmount?: string[] }; fetchedAt?: string; error?: string; loggedIn?: boolean; accessDenied?: boolean } | null;
+  yesterday: { scrape?: ScrapeData; conversions?: { totalDepositAmount?: string[]; totalWithdrawalAmount?: string[] }; fetchedAt?: string; error?: string; loggedIn?: boolean; accessDenied?: boolean; cached?: boolean } | null;
+}
+
 function formatReportDate(s?: string): string {
   if (!s) return '—';
   const d = new Date(s);
@@ -290,6 +297,7 @@ export default function ProfilesPage() {
   const [totpError, setTotpError] = useState('');
   const [copied, setCopied] = useState('');
   const [fetchResult, setFetchResult] = useState<FetchResultData | null>(null);
+  const [fullFetchResult, setFullFetchResult] = useState<FullFetchResultData | null>(null);
 
   function copyToClipboard(text: string, label: string) {
     navigator.clipboard.writeText(text);
@@ -413,6 +421,47 @@ export default function ProfilesPage() {
       }
     } catch (err: any) {
       setError(err.message || `${action} failed`);
+    } finally {
+      setBusyActions((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
+  }
+
+  async function handleFullFetch(id: string) {
+    const profile = profiles.find((p) => p.id === id);
+    setBusyActions((prev) => ({ ...prev, [id]: 'full' }));
+    try {
+      const [todayRes, yesterdayRes] = await Promise.all([
+        api.post<any>(`/profiles/${id}/fetch`, { period: 'today' }).catch((e: any) => ({ error: e.message })),
+        api.post<any>(`/profiles/${id}/fetch`, { period: 'yesterday' }).catch((e: any) => ({ error: e.message })),
+      ]);
+      await loadProfiles();
+      setFullFetchResult({
+        profileName: profile?.name || id,
+        profileKind: profile?.kind || '',
+        today: {
+          scrape: todayRes.scrape,
+          conversions: todayRes.conversions,
+          fetchedAt: todayRes.fetchedAt,
+          error: todayRes.error,
+          loggedIn: todayRes.loggedIn,
+          accessDenied: todayRes.accessDenied,
+        },
+        yesterday: {
+          scrape: yesterdayRes.scrape,
+          conversions: yesterdayRes.conversions,
+          fetchedAt: yesterdayRes.fetchedAt,
+          error: yesterdayRes.error,
+          loggedIn: yesterdayRes.loggedIn,
+          accessDenied: yesterdayRes.accessDenied,
+          cached: yesterdayRes.cached,
+        },
+      });
+    } catch (err: any) {
+      setError(err.message || 'Full fetch failed');
     } finally {
       setBusyActions((prev) => {
         const next = { ...prev };
@@ -958,6 +1007,139 @@ export default function ProfilesPage() {
         </div>
       )}
 
+      {fullFetchResult && (
+        <div className="modal-overlay" onClick={() => setFullFetchResult(null)}>
+          <div className="fetch-card full-fetch-card" onClick={(e) => e.stopPropagation()}>
+            <div className="fetch-card-head">
+              <div>
+                <div className="fetch-card-name">{fullFetchResult.profileName}</div>
+                <div className="fetch-card-sub">
+                  Today vs Yesterday — Full Comparison
+                </div>
+              </div>
+              <span className={`badge badge-${fullFetchResult.profileKind.toLowerCase()}`}>
+                {fullFetchResult.profileKind}
+              </span>
+            </div>
+
+            {(fullFetchResult.today?.loggedIn === false || fullFetchResult.yesterday?.loggedIn === false) && (
+              <div className="fetch-result-error">
+                <span className="fetch-result-icon">⚠</span>
+                <div>
+                  <strong>Session Issue</strong>
+                  <p>
+                    {fullFetchResult.today?.accessDenied || fullFetchResult.yesterday?.accessDenied
+                      ? 'Access denied on one or both periods.'
+                      : 'Session expired — please login first.'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {(fullFetchResult.today?.scrape || fullFetchResult.yesterday?.scrape) && (
+              <>
+                <div className="full-fetch-header">
+                  <div className="full-fetch-col-label" />
+                  <div className="full-fetch-col-head">
+                    Today
+                    {fullFetchResult.today?.scrape?.reportDate && (
+                      <span className="full-fetch-date">{formatReportDate(fullFetchResult.today.scrape.reportDate)}</span>
+                    )}
+                  </div>
+                  <div className="full-fetch-col-head">
+                    Yesterday
+                    {fullFetchResult.yesterday?.scrape?.reportDate && (
+                      <span className="full-fetch-date">{formatReportDate(fullFetchResult.yesterday.scrape.reportDate)}</span>
+                    )}
+                  </div>
+                  <div className="full-fetch-col-head">Change</div>
+                </div>
+
+                {([
+                  { key: 'newRegistrationCount' as const, label: 'New Registrations' },
+                  { key: 'newDepositCount' as const, label: 'New Deposits' },
+                  { key: 'totalDepositCount' as const, label: 'Deposit Count' },
+                  { key: 'totalDepositAmount' as const, label: 'Deposit Amount', isAmt: true },
+                  { key: 'totalWithdrawalCount' as const, label: 'Withdrawal Count' },
+                  { key: 'totalWithdrawalAmount' as const, label: 'Withdrawal Amount', isAmt: true },
+                ]).map((m) => {
+                  const tVal = fullFetchResult.today?.scrape?.[m.key];
+                  const yVal = fullFetchResult.yesterday?.scrape?.[m.key];
+                  const tNum = typeof tVal === 'string' ? parseFloat(tVal) : (tVal ?? 0);
+                  const yNum = typeof yVal === 'string' ? parseFloat(yVal) : (yVal ?? 0);
+                  const diff = tNum - yNum;
+                  const pct = yNum ? ((diff / Math.abs(yNum)) * 100) : null;
+                  return (
+                    <div key={m.key} className="full-fetch-row">
+                      <div className="full-fetch-label">{m.label}</div>
+                      <div className={`full-fetch-val ${m.isAmt ? 'amount' : ''}`}>{fmt(tVal)}</div>
+                      <div className={`full-fetch-val ${m.isAmt ? 'amount' : ''}`}>{fmt(yVal)}</div>
+                      <div className="full-fetch-delta">
+                        {pct !== null && isFinite(pct) && Math.abs(pct) >= 0.1 ? (
+                          <span className={`text-[12px] font-semibold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-error' : 'text-muted'}`}>
+                            {diff > 0 ? '▲' : diff < 0 ? '▼' : '—'} {Math.abs(pct).toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-[12px] text-muted">—</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Net flow comparison row */}
+                {(() => {
+                  const tNet = (typeof fullFetchResult.today?.scrape?.totalDepositAmount === 'string' ? parseFloat(fullFetchResult.today.scrape.totalDepositAmount) : (fullFetchResult.today?.scrape?.totalDepositAmount ?? 0))
+                    - (typeof fullFetchResult.today?.scrape?.totalWithdrawalAmount === 'string' ? parseFloat(fullFetchResult.today.scrape.totalWithdrawalAmount) : (fullFetchResult.today?.scrape?.totalWithdrawalAmount ?? 0));
+                  const yNet = (typeof fullFetchResult.yesterday?.scrape?.totalDepositAmount === 'string' ? parseFloat(fullFetchResult.yesterday.scrape.totalDepositAmount) : (fullFetchResult.yesterday?.scrape?.totalDepositAmount ?? 0))
+                    - (typeof fullFetchResult.yesterday?.scrape?.totalWithdrawalAmount === 'string' ? parseFloat(fullFetchResult.yesterday.scrape.totalWithdrawalAmount) : (fullFetchResult.yesterday?.scrape?.totalWithdrawalAmount ?? 0));
+                  const diff = tNet - yNet;
+                  const pct = yNet ? ((diff / Math.abs(yNet)) * 100) : null;
+                  return (
+                    <div className="full-fetch-row full-fetch-net-row">
+                      <div className="full-fetch-label font-bold">Net Flow</div>
+                      <div className={`full-fetch-val font-bold ${tNet >= 0 ? 'text-success' : 'text-error'}`}>
+                        {tNet >= 0 ? '+' : ''}{fmt(tNet)}
+                      </div>
+                      <div className={`full-fetch-val font-bold ${yNet >= 0 ? 'text-success' : 'text-error'}`}>
+                        {yNet >= 0 ? '+' : ''}{fmt(yNet)}
+                      </div>
+                      <div className="full-fetch-delta">
+                        {pct !== null && isFinite(pct) && Math.abs(pct) >= 0.1 ? (
+                          <span className={`text-[12px] font-bold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-error' : 'text-muted'}`}>
+                            {diff > 0 ? '▲' : diff < 0 ? '▼' : '—'} {Math.abs(pct).toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-[12px] text-muted">—</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Conversions */}
+                {(fullFetchResult.today?.conversions?.totalDepositAmount?.length || fullFetchResult.yesterday?.conversions?.totalDepositAmount?.length) ? (
+                  <div className="full-fetch-conv">
+                    {fullFetchResult.today?.conversions?.totalDepositAmount && (
+                      <span>Today dep: {fullFetchResult.today.conversions.totalDepositAmount.join(' · ')}</span>
+                    )}
+                    {fullFetchResult.yesterday?.conversions?.totalDepositAmount && (
+                      <span>Yest dep: {fullFetchResult.yesterday.conversions.totalDepositAmount.join(' · ')}</span>
+                    )}
+                  </div>
+                ) : null}
+              </>
+            )}
+
+            <div className="fetch-card-foot">
+              <span className="fetch-card-dot" /> Scraper Dashboard · full fetch
+              {fullFetchResult.yesterday?.cached && <span className="fetch-card-cached ml-2">yesterday cached</span>}
+              <button className="btn btn-primary ml-auto" onClick={() => setFullFetchResult(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {profiles.length === 0 ? (
         <div className="empty-state">
           <p>No profiles yet.</p>
@@ -1065,6 +1247,13 @@ export default function ProfilesPage() {
                               onClick={() => handleAction(p.id, 'fetch', { period: 'yesterday' })}
                             >
                               {busyActions[p.id] ? '...' : 'Yest.'}
+                            </button>
+                            <button
+                              className="btn btn-sm btn-ghost hidden md:inline-block"
+                              disabled={!!busyActions[p.id]}
+                              onClick={() => handleFullFetch(p.id)}
+                            >
+                              {busyActions[p.id] === 'full' ? '...' : 'Full'}
                             </button>
                             <button className="btn btn-sm btn-ghost" onClick={() => openEdit(p)}>
                               Edit

@@ -924,6 +924,93 @@ tr:hover td { background: var(--surface-hover); }
   flex-shrink: 0;
 }
 
+/* Full Fetch comparison card */
+.full-fetch-card {
+  max-width: 680px;
+}
+
+.full-fetch-header {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 0.7fr;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 2px;
+}
+
+.full-fetch-col-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.full-fetch-col-head {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.full-fetch-date {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.full-fetch-row {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 0.7fr;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  transition: background 0.1s;
+}
+
+.full-fetch-row:hover {
+  background: var(--surface-hover);
+}
+
+.full-fetch-net-row {
+  border-top: 2px solid var(--border);
+  border-bottom: none;
+  margin-top: 2px;
+  padding-top: 10px;
+}
+
+.full-fetch-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.full-fetch-val {
+  font-size: 14px;
+  font-weight: 600;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.full-fetch-val.amount {
+  color: var(--accent);
+}
+
+.full-fetch-delta {
+  text-align: right;
+}
+
+.full-fetch-conv {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
 /* ─── Empty State ───────────────────────────────────── */
 
 .empty-state {
@@ -1950,6 +2037,23 @@ tr:hover td { background: var(--surface-hover); }
 
   .fetch-card-value {
     font-size: 20px;
+  }
+
+  .full-fetch-card {
+    max-width: calc(100vw - 24px);
+  }
+
+  .full-fetch-header,
+  .full-fetch-row {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .full-fetch-delta {
+    display: none;
+  }
+
+  .full-fetch-val {
+    font-size: 12px;
   }
 
   .fetch-result-metrics {
