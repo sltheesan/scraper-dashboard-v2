@@ -30,6 +30,9 @@ interface TelegramSettings {
   restricted: boolean;
   sendImage: boolean;
   sendText: boolean;
+  summaryImage?: boolean;
+  rankingsImage?: boolean;
+  statusImage?: boolean;
   allowedChatIds: string[];
   alertChatIds: string[];
   allowedUsernames: string[];
@@ -108,6 +111,9 @@ export default function SettingsPage() {
         restricted: telegram.restricted,
         sendImage: telegram.sendImage,
         sendText: telegram.sendText,
+        summaryImage: telegram.summaryImage,
+        rankingsImage: telegram.rankingsImage,
+        statusImage: telegram.statusImage,
         features: telegram.features,
         scheduledPush: telegram.scheduledPush,
         thresholdAlerts: telegram.thresholdAlerts,
@@ -508,6 +514,30 @@ export default function SettingsPage() {
                   </div>
                 </>
               )}
+
+              <h4 className="settings-subsection-title" style={{ marginTop: '20px' }}>Image Output</h4>
+              <p className="settings-desc" style={{ marginBottom: '12px' }}>Send PNG card images instead of plain text for these commands</p>
+
+              {([
+                { key: 'summaryImage' as const, label: 'Summary Image', desc: 'Send summary as a styled PNG card' },
+                { key: 'rankingsImage' as const, label: 'Rankings Image', desc: 'Send rankings as a styled PNG card' },
+                { key: 'statusImage' as const, label: 'Status Image', desc: 'Send status check as a styled PNG card' },
+              ] as const).map(({ key, label, desc }) => (
+                <div key={key} className="settings-row">
+                  <div className="settings-row-label">
+                    <span>{label}</span>
+                    <span className="settings-desc">{desc}</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={(telegram as any)[key] ?? false}
+                      onChange={(e) => setTelegram({ ...telegram, [key]: e.target.checked })}
+                    />
+                    <span className="toggle-slider" />
+                  </label>
+                </div>
+              ))}
 
               {canEdit && (
                 <div className="settings-card-actions">

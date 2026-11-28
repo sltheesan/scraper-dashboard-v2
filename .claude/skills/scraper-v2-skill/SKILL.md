@@ -81,7 +81,7 @@ Entry: `src/main.ts` → sets `TZ=Asia/Bangkok`, global prefix `/api`, Swagger a
 - `POST /api/profiles/:id/login` — open browser login window
 - `POST /api/profiles/:id/login/finish` — save session cookies
 - `POST /api/profiles/:id/login/cancel` — close login window
-- `POST /api/profiles/:id/fetch` — fetch today/yesterday data, returns `conversions` (USD/IDR labels) and `fetchedAt`
+- `POST /api/profiles/:id/fetch` — fetch today/yesterday data, returns `conversions` (USD/THB/IDR/MYR labels) and `fetchedAt`
 
 **Credentials:**
 - `GET|PUT|DELETE /api/profiles/:id/credentials` — encrypted credential CRUD (username, password, PIN, TOTP secret, OTP email)
@@ -237,17 +237,76 @@ Schema: `prisma/schema.prisma`. Client exported from `src/index.ts` as `@scraper
 
 ## 7. Telegram Bot (`src/telegram/telegram.service.ts`)
 
-- Long-polling (no SDK), inline keyboard for profile selection
+- Long-polling (no SDK), inline keyboards
 - Restricted mode (default: `true`) with allowedChatIds + allowedUsernames
-- PNG card rendering (`image-render.ts`) + HTML text formatting with currency conversions (USD/IDR) and fetch time
+- PNG card rendering (`image-render.ts`) + HTML text formatting with currency conversions and fetch time
 - Session-expired and access-denied alerts to `alertChatIds`
 - Bot token stored in DB settings, updateable at runtime
+- Features toggleable via Settings → Telegram → Bot Features
+
+### Main Menu
+
+Any message shows the main menu with buttons for enabled features:
+
+```
+📋 Profiles  |  📊 Summary
+🏆 Rankings  |  🔍 Status
+```
+
+### Bot Features
+
+| Feature | Description | Callback data |
+|---|---|---|
+| **Profiles** | List all profiles; pinned profiles show first with ⭐ | `list` |
+| **Today / Yesterday / Both** | Fetch single profile data (per-profile) | `f:<id>`, `y:<id>`, `b:<id>` |
+| **Summary** | All-profiles consolidated totals (deposits, withdrawals, net flow) grouped by platform. Today/Yesterday sub-menu. Optional PNG card. | `summary`, `summary:today`, `summary:yesterday` |
+| **Rankings** | Profiles ranked by deposits with mini bar chart + net flow leaders/lowest. Today/Yesterday sub-menu. Optional PNG card. | `rankings`, `rankings:today`, `rankings:yesterday` |
+| **Status Check** | Session status overview — profiles grouped by LOGGED_IN / LOGGED_OUT / ACCESS_DENIED / ERROR. Optional PNG card. | `status` |
+| **Pin Favorites** | Star key profiles to show first in profile list. Pin/Unpin button on result keyboard. | `pin:<id>`, `unpin:<id>` |
+| **Scheduled Push** | Auto-send daily summary at configured time (ICT) to `alertChatIds`. 60s check interval, deduplicates by date. | (timer, no callback) |
+| **Threshold Alerts** | After each today fetch, compares vs yesterday. Alerts if deposits drop ≥X% or net flow goes negative. Sent to `alertChatIds`. | (hook in `doFetch`) |
+
+Other callbacks: `menu` (main menu).
+
+### Image Rendering (`image-render.ts`)
+
+- Uses Playwright headless Chromium to render HTML → PNG at 2× device scale
+- `renderProfileCard()` — single profile data card (6 metric tiles + currency conversions)
+- `renderSummaryCard()` — all-profiles summary (per-platform breakdown + totals)
+- `renderRankingsCard()` — deposits bar chart + net flow leaders
+- `renderStatusCard()` — profile status groups with colored dots
+- Summary/Rankings/Status image output toggleable via settings (`summaryImage`, `rankingsImage`, `statusImage`)
+
+### TelegramSettings (stored in `settings` table, key `telegram`)
+
+```typescript
+{
+  restricted: boolean;
+  allowedChatIds: string[];
+  allowedUsernames: string[];
+  sendImage: boolean;          // PNG card for profile fetches
+  sendText: boolean;           // text message for profile fetches
+  alertChatIds: string[];
+  features: {
+    summary: boolean;
+    rankings: boolean;
+    statusCheck: boolean;
+    pinFavorites: boolean;
+    scheduledPush: boolean;
+    thresholdAlerts: boolean;
+  };
+  pinnedProfiles: string[];    // profile IDs
+  scheduledPush: { time: string; lastSentDate: string };
+  thresholdAlerts: { depositDropPercent: number; negativeNetFlow: boolean };
+}
+```
 
 ### Currency Conversion (`src/common/currency.ts`)
 - Platform currency mapping: CGAMING/ZOOMWLB → IDR, ONEOPSPORTAL → THB
-- Converts amounts to USD and IDR using live exchange rates from `open.er-api.com`
-- Rates cached for 4 hours
-- Used by: Telegram card rendering, fetch result popup (via profiles controller)
+- Conversion targets: USD, THB, IDR, MYR
+- Live exchange rates from `open.er-api.com`, cached for 4 hours
+- `fmtCurrency()` formats with symbols: `$`, `Rp `, `฿`, `RM `
+- Used by: Telegram card rendering, fetch result popup, Summary/Rankings
 
 ---
 
@@ -279,7 +338,7 @@ v1 runs at `scraper.200m.tech`, v2 at `scraper-v2.200m.tech` (side by side).
 
 ### Dashboard Layout Features
 - VNC session banner in layout — polls `/api/vnc/session` every 10s, shows active user + "End VNC Session" button
-- Fetch result popup — shows 6 metrics with USD/IDR currency conversions and fetch time
+- Fetch result popup — shows 6 metrics with currency conversions (USD/THB/IDR/MYR) and fetch time
 
 ---
 

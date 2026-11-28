@@ -4,7 +4,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { LogsService } from '../logs/logs.service';
 import { COMMON_FIELDS, COMMON_LABELS } from '../scraper/parsers/common';
 import { formatICT, formatICTDate } from '../common/business-day';
-import { renderProfileCard, closeRenderer } from './image-render';
+import {
+  renderProfileCard,
+  renderSummaryCard,
+  renderRankingsCard,
+  renderStatusCard,
+  closeRenderer,
+  type SummaryPlatform,
+  type RankingEntry,
+  type StatusGroup,
+} from './image-render';
 import { currencyForPlatform, getExchangeRates, convertedLabels, CurrencyInfo } from '../common/currency';
 
 export interface TelegramFeatures {
@@ -22,6 +31,9 @@ export interface TelegramSettings {
   allowedUsernames: string[];
   sendImage: boolean;
   sendText: boolean;
+  summaryImage: boolean;
+  rankingsImage: boolean;
+  statusImage: boolean;
   alertChatIds: string[];
   features: TelegramFeatures;
   pinnedProfiles: string[];
@@ -35,6 +47,9 @@ const DEFAULT_TELEGRAM_SETTINGS: TelegramSettings = {
   allowedUsernames: [],
   sendImage: true,
   sendText: true,
+  summaryImage: false,
+  rankingsImage: false,
+  statusImage: false,
   alertChatIds: [],
   features: {
     summary: true,
@@ -1158,6 +1173,28 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
           [{ text: '‹ Back to menu', callback_data: 'menu' }],
         ],
       };
+
+      if (this.settings.summaryImage) {
+        const rates = await getExchangeRates();
+        const platformData: SummaryPlatform[] = Object.entries(byPlatform).map(([kind, data]) => {
+          const currency = currencyForPlatform(kind);
+          const convLabels = rates ? convertedLabels(data.dep, currency, rates) : [];
+          return { kind, count: data.count, dep: data.dep, with: data.with, convLabels };
+        });
+        const missing = profiles.filter((p) => !scrapes.find((s) => s.profileId === p.id));
+        const missingNames = missing.map((p) => p.name);
+        const png = await renderSummaryCard(
+          periodLabel, dateLabel, platformData, totalDep, totalWith, totalProfiles, profiles.length, missingNames,
+        );
+        if (png) {
+          if (messageId) {
+            await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
+          }
+          await this.sendPhoto(chatId, png, { caption: text, reply_markup: kb });
+          return;
+        }
+      }
+
       await this.finishText(chatId, messageId ?? null, text, kb);
     } catch (err: any) {
       this.logger.error(`Summary failed: ${err.message}`);
@@ -1260,6 +1297,23 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       const text = lines.join('\n');
+
+      if (this.settings.rankingsImage) {
+        const rankEntries: RankingEntry[] = ranked.map((r) => ({
+          name: r.name,
+          dep: r.dep,
+          net: r.dep - r.with,
+        }));
+        const png = await renderRankingsCard(periodLabel, dateLabel, rankEntries);
+        if (png) {
+          if (messageId) {
+            await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
+          }
+          await this.sendPhoto(chatId, png, { caption: text, reply_markup: periodKb });
+          return;
+        }
+      }
+
       await this.finishText(chatId, messageId ?? null, text, periodKb);
     } catch (err: any) {
       this.logger.error(`Rankings failed: ${err.message}`);
@@ -1312,6 +1366,21 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
       const text = lines.join('\n');
       const kb = { inline_keyboard: [[{ text: '‹ Back to menu', callback_data: 'menu' }]] };
+
+      if (this.settings.statusImage) {
+        const statusGroups: StatusGroup[] = order
+          .filter((s) => groups[s]?.length)
+          .map((s) => ({ status: s, icon: statusIcon[s] || '❓', names: groups[s] }));
+        const png = await renderStatusCard(formatICT(), statusGroups, loggedIn, profiles.length);
+        if (png) {
+          if (messageId) {
+            await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
+          }
+          await this.sendPhoto(chatId, png, { caption: text, reply_markup: kb });
+          return;
+        }
+      }
+
       await this.finishText(chatId, messageId ?? null, text, kb);
     } catch (err: any) {
       this.logger.error(`Status check failed: ${err.message}`);

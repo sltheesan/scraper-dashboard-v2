@@ -22,6 +22,9 @@ const TELEGRAM_DEFAULTS = {
   allowedUsernames: [] as string[],
   sendImage: true,
   sendText: true,
+  summaryImage: false,
+  rankingsImage: false,
+  statusImage: false,
   alertChatIds: [] as string[],
   features: {
     summary: true,
