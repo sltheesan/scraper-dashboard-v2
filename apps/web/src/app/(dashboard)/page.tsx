@@ -227,6 +227,12 @@ export default function DashboardHome() {
       .sort((a, b) => (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99) || a.name.localeCompare(b.name));
   }, [profiles, todayScrapes]);
 
+  const lastScrapeTime = useMemo(() => {
+    const times = profiles.map(p => p.lastScrapeAt).filter(Boolean) as string[];
+    if (times.length === 0) return null;
+    return times.reduce((a, b) => (new Date(a) > new Date(b) ? a : b));
+  }, [profiles]);
+
   if (loading) return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -236,12 +242,6 @@ export default function DashboardHome() {
       <div className="skeleton" style={{ height: 300 }} />
     </div>
   );
-
-  const lastScrapeTime = useMemo(() => {
-    const times = profiles.map(p => p.lastScrapeAt).filter(Boolean) as string[];
-    if (times.length === 0) return null;
-    return times.reduce((a, b) => (new Date(a) > new Date(b) ? a : b));
-  }, [profiles]);
 
   if (profiles.length === 0 && !hasPrivilege('profiles.view')) {
     return (

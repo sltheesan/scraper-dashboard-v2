@@ -243,12 +243,12 @@ export class ProfilesController {
         const yScrape = await this.scrapes.getYesterday(id);
         if (yScrape) {
           result.yesterday = {
-            totalDepositAmount: yScrape.totalDepositAmount,
-            totalWithdrawalAmount: yScrape.totalWithdrawalAmount,
-            newRegistrationCount: yScrape.newRegistrationCount,
-            newDepositCount: yScrape.newDepositCount,
-            totalDepositCount: yScrape.totalDepositCount,
-            totalWithdrawalCount: yScrape.totalWithdrawalCount,
+            totalDepositAmount: Number(yScrape.totalDepositAmount) || 0,
+            totalWithdrawalAmount: Number(yScrape.totalWithdrawalAmount) || 0,
+            newRegistrationCount: yScrape.newRegistrationCount ?? 0,
+            newDepositCount: yScrape.newDepositCount ?? 0,
+            totalDepositCount: yScrape.totalDepositCount ?? 0,
+            totalWithdrawalCount: yScrape.totalWithdrawalCount ?? 0,
           };
         }
       }
