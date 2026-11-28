@@ -28,6 +28,13 @@ interface TelegramSettings {
   tokenPreview?: string;
 }
 
+const SECTION_ICONS = {
+  scheduler: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  platform: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>,
+  telegram: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.2 4.6L2.4 11.5c-.5.2-.5.5 0 .7l4.7 1.5 1.8 5.8c.1.4.5.5.8.3l2.6-2.1 5.1 3.7c.4.3.9.1 1-.3L22.5 5.4c.2-.6-.4-1.1-.9-.8z"/><path d="M9.1 13.7l8.4-7.2"/></svg>,
+  backup: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+};
+
 export default function SettingsPage() {
   const { user, hasPrivilege } = useAuth();
   const router = useRouter();
@@ -49,6 +56,7 @@ export default function SettingsPage() {
   const [newUsername, setNewUsername] = useState('');
   const [botToken, setBotToken] = useState('');
   const [botTokenBusy, setBotTokenBusy] = useState(false);
+  const [activeSection, setActiveSection] = useState<string | null>(null);
 
   useEffect(() => {
     if (!hasPrivilege('settings.view')) { router.replace('/'); return; }
@@ -152,18 +160,38 @@ export default function SettingsPage() {
     } catch (e: any) { setError(e.message); }
   }
 
-  if (loading) return <div className="flex items-center justify-center py-20"><div className="spinner" /></div>;
+  if (loading) return (
+    <div className="settings-page">
+      <div className="space-y-5">
+        {[...Array(3)].map((_, i) => <div key={i} className="skeleton skeleton-card" style={{ height: 180 }} />)}
+      </div>
+    </div>
+  );
+
+  const canEdit = hasPrivilege('settings.edit');
 
   return (
     <div className="settings-page">
       {error && <div className="error-msg mb-4">{error}</div>}
       {success && <div className="success-msg mb-4">{success}</div>}
 
-      <div className="settings-grid">
-        {/* Scheduler */}
-        <section className="card settings-section">
-          <h3>Scheduler</h3>
-          <form onSubmit={saveScheduler}>
+      <div className="settings-layout">
+        {/* ── Scheduler ── */}
+        <section className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-icon">{SECTION_ICONS.scheduler}</div>
+            <div>
+              <h3 className="settings-card-title">Scheduler</h3>
+              <p className="settings-card-desc">Automated scraping and session keep-alive</p>
+            </div>
+            <div className="settings-card-status">
+              <span className={`settings-status-badge ${scheduler.fetch.enabled ? 'active' : 'inactive'}`}>
+                {scheduler.fetch.enabled ? 'Running' : 'Paused'}
+              </span>
+            </div>
+          </div>
+
+          <form onSubmit={saveScheduler} className="settings-card-body">
             <div className="settings-row">
               <div className="settings-row-label">
                 <span>Auto Fetch</span>
@@ -179,21 +207,26 @@ export default function SettingsPage() {
               </label>
             </div>
 
-            <div className="settings-row">
-              <div className="settings-row-label"><span>Fetch Interval (min)</span></div>
-              <input
-                type="number"
-                className="settings-input"
-                min={1}
-                value={Math.round(scheduler.fetch.intervalMs / 60000)}
-                onChange={(e) => setScheduler({ ...scheduler, fetch: { ...scheduler.fetch, intervalMs: Number(e.target.value) * 60000 } })}
-              />
-            </div>
+            {scheduler.fetch.enabled && (
+              <div className="settings-row">
+                <div className="settings-row-label"><span>Fetch Interval</span></div>
+                <div className="settings-input-group">
+                  <input
+                    type="number"
+                    className="settings-input"
+                    min={1}
+                    value={Math.round(scheduler.fetch.intervalMs / 60000)}
+                    onChange={(e) => setScheduler({ ...scheduler, fetch: { ...scheduler.fetch, intervalMs: Number(e.target.value) * 60000 } })}
+                  />
+                  <span className="settings-input-suffix">min</span>
+                </div>
+              </div>
+            )}
 
             <div className="settings-row">
               <div className="settings-row-label">
                 <span>Session Refresh</span>
-                <span className="settings-desc">Keep-alive for browser sessions</span>
+                <span className="settings-desc">Keep browser sessions alive</span>
               </div>
               <label className="toggle">
                 <input
@@ -205,112 +238,133 @@ export default function SettingsPage() {
               </label>
             </div>
 
-            <div className="settings-row">
-              <div className="settings-row-label"><span>Refresh Interval (min)</span></div>
-              <input
-                type="number"
-                className="settings-input"
-                min={1}
-                value={Math.round(scheduler.refresh.intervalMs / 60000)}
-                onChange={(e) => setScheduler({ ...scheduler, refresh: { ...scheduler.refresh, intervalMs: Number(e.target.value) * 60000 } })}
-              />
-            </div>
+            {scheduler.refresh.enabled && (
+              <div className="settings-row">
+                <div className="settings-row-label"><span>Refresh Interval</span></div>
+                <div className="settings-input-group">
+                  <input
+                    type="number"
+                    className="settings-input"
+                    min={1}
+                    value={Math.round(scheduler.refresh.intervalMs / 60000)}
+                    onChange={(e) => setScheduler({ ...scheduler, refresh: { ...scheduler.refresh, intervalMs: Number(e.target.value) * 60000 } })}
+                  />
+                  <span className="settings-input-suffix">min</span>
+                </div>
+              </div>
+            )}
 
-            <div className="form-actions mt-3">
-              <button type="submit" className="btn btn-primary">Save Scheduler</button>
-            </div>
+            {canEdit && (
+              <div className="settings-card-actions">
+                <button type="submit" className="btn btn-primary">Save Scheduler</button>
+              </div>
+            )}
           </form>
         </section>
 
-        {/* Platform Cutover */}
-        <section className="card settings-section">
-          <h3>Platform Cutover</h3>
-          <p className="text-muted text-xs mb-3">
-            Business day boundary (ICT). Daily capture runs 15 min after.
-          </p>
-          {['cgaming', 'zoomwlb', 'oneopsportal'].map((kind) => {
-            const cfg = scheduler.platforms?.[kind] || { dayCutover: '11:00', todayMissing: 'calm' };
-            return (
-              <div key={kind} className="mb-4">
-                <div className="font-semibold text-[13px] uppercase mb-2">
-                  {kind}
+        {/* ── Platform Cutover ── */}
+        <section className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-icon">{SECTION_ICONS.platform}</div>
+            <div>
+              <h3 className="settings-card-title">Platform Cutover</h3>
+              <p className="settings-card-desc">Business day boundary (ICT). Daily capture runs 15 min after.</p>
+            </div>
+          </div>
+
+          <div className="settings-card-body">
+            {['cgaming', 'zoomwlb', 'oneopsportal'].map((kind, i, arr) => {
+              const cfg = scheduler.platforms?.[kind] || { dayCutover: '11:00', todayMissing: 'calm' };
+              return (
+                <div key={kind} className={`settings-platform-row ${i < arr.length - 1 ? 'border-b border-border' : ''}`}>
+                  <div className="settings-platform-name">
+                    <span className={`badge badge-${kind.toLowerCase()}`}>{kind.toUpperCase()}</span>
+                  </div>
+                  <div className="settings-platform-fields">
+                    <label className="settings-field-label">
+                      <span>Cutover</span>
+                      <input
+                        type="time"
+                        className="settings-input"
+                        value={cfg.dayCutover}
+                        onChange={(e) => savePlatform(kind, { ...cfg, dayCutover: e.target.value })}
+                      />
+                    </label>
+                    <label className="settings-field-label">
+                      <span>If Missing</span>
+                      <select
+                        className="settings-input"
+                        value={cfg.todayMissing}
+                        onChange={(e) => savePlatform(kind, { ...cfg, todayMissing: e.target.value })}
+                      >
+                        <option value="calm">Calm (skip)</option>
+                        <option value="fallback">Fallback (nearest)</option>
+                      </select>
+                    </label>
+                  </div>
                 </div>
-                <div className="flex gap-3 items-center flex-wrap">
-                  <label className="text-[13px] flex items-center gap-1.5">
-                    Cutover
-                    <input
-                      type="time"
-                      className="settings-input w-[110px]"
-                      value={cfg.dayCutover}
-                      onChange={(e) => savePlatform(kind, { ...cfg, dayCutover: e.target.value })}
-                    />
-                  </label>
-                  <label className="text-[13px] flex items-center gap-1.5">
-                    Today Missing
-                    <select
-                      className="settings-input w-auto"
-                      value={cfg.todayMissing}
-                      onChange={(e) => savePlatform(kind, { ...cfg, todayMissing: e.target.value })}
-                    >
-                      <option value="calm">Calm (skip)</option>
-                      <option value="fallback">Fallback (nearest)</option>
-                    </select>
-                  </label>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </section>
 
-        {/* Telegram Bot */}
-        <section className="card settings-section settings-full">
-          <h3>Telegram Bot</h3>
-
-          <div className="settings-bot-status">
-            <span className={`settings-bot-dot ${telegram.bot ? 'online' : 'offline'}`} />
-            {telegram.bot ? (
-              <span>
-                <strong>@{telegram.bot.username}</strong>
-                <span className="text-muted ml-1.5">ID: {telegram.bot.id}</span>
-                {telegram.tokenPreview && (
-                  <span className="text-muted ml-2.5 opacity-60">
-                    {telegram.tokenPreview}
-                  </span>
-                )}
-              </span>
-            ) : (
-              <span className="text-muted">
-                No bot connected
-                {telegram.tokenPreview && (
-                  <span className="ml-2.5 opacity-60">{telegram.tokenPreview}</span>
-                )}
-              </span>
-            )}
-          </div>
-
-          <div className="settings-token-row mb-4">
-            <input
-              placeholder="Paste new bot token..."
-              value={botToken}
-              onChange={(e) => setBotToken(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), updateBotToken())}
-            />
-            <button
-              className="btn btn-sm btn-primary"
-              disabled={botTokenBusy || !botToken.trim()}
-              onClick={updateBotToken}
-            >
-              {botTokenBusy ? 'Connecting...' : 'Update Bot'}
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Toggles */}
+        {/* ── Telegram Bot ── */}
+        <section className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-icon">{SECTION_ICONS.telegram}</div>
             <div>
+              <h3 className="settings-card-title">Telegram Bot</h3>
+              <p className="settings-card-desc">Notifications, alerts, and remote data access</p>
+            </div>
+            <div className="settings-card-status">
+              <span className={`settings-status-badge ${telegram.bot ? 'active' : 'inactive'}`}>
+                {telegram.bot ? 'Connected' : 'Offline'}
+              </span>
+            </div>
+          </div>
+
+          <div className="settings-card-body">
+            {/* Bot connection */}
+            <div className="settings-bot-banner">
+              <span className={`settings-bot-dot ${telegram.bot ? 'online' : 'offline'}`} />
+              {telegram.bot ? (
+                <span className="settings-bot-info">
+                  <strong>@{telegram.bot.username}</strong>
+                  <span className="text-muted">ID: {telegram.bot.id}</span>
+                  {telegram.tokenPreview && (
+                    <span className="text-muted opacity-50">{telegram.tokenPreview}</span>
+                  )}
+                </span>
+              ) : (
+                <span className="text-muted">No bot connected</span>
+              )}
+            </div>
+
+            {canEdit && (
+              <div className="settings-token-row">
+                <input
+                  placeholder="Paste new bot token..."
+                  value={botToken}
+                  onChange={(e) => setBotToken(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), updateBotToken())}
+                />
+                <button
+                  className="btn btn-sm btn-primary"
+                  disabled={botTokenBusy || !botToken.trim()}
+                  onClick={updateBotToken}
+                >
+                  {botTokenBusy ? 'Connecting...' : 'Update Bot'}
+                </button>
+              </div>
+            )}
+
+            {/* Toggles section */}
+            <div className="settings-subsection">
+              <h4 className="settings-subsection-title">Behavior</h4>
               <div className="settings-row">
                 <div className="settings-row-label">
                   <span>Restricted Mode</span>
-                  <span className="settings-desc">Only listed chat IDs / usernames</span>
+                  <span className="settings-desc">Only listed chat IDs / usernames can interact</span>
                 </div>
                 <label className="toggle">
                   <input type="checkbox" checked={telegram.restricted} onChange={(e) => setTelegram({ ...telegram, restricted: e.target.checked })} />
@@ -319,7 +373,10 @@ export default function SettingsPage() {
               </div>
 
               <div className="settings-row">
-                <div className="settings-row-label"><span>Send Image</span></div>
+                <div className="settings-row-label">
+                  <span>Send Image</span>
+                  <span className="settings-desc">Send PNG card with scrape results</span>
+                </div>
                 <label className="toggle">
                   <input type="checkbox" checked={telegram.sendImage} onChange={(e) => setTelegram({ ...telegram, sendImage: e.target.checked })} />
                   <span className="toggle-slider" />
@@ -327,119 +384,189 @@ export default function SettingsPage() {
               </div>
 
               <div className="settings-row">
-                <div className="settings-row-label"><span>Send Text</span></div>
+                <div className="settings-row-label">
+                  <span>Send Text</span>
+                  <span className="settings-desc">Send formatted text message with results</span>
+                </div>
                 <label className="toggle">
                   <input type="checkbox" checked={telegram.sendText} onChange={(e) => setTelegram({ ...telegram, sendText: e.target.checked })} />
                   <span className="toggle-slider" />
                 </label>
               </div>
 
-              <div className="form-actions mt-3">
-                <button type="button" className="btn btn-primary" onClick={saveTelegram}>Save Telegram</button>
-                <button type="button" className="btn btn-ghost" onClick={testAlert}>Test Alert</button>
-              </div>
+              {canEdit && (
+                <div className="settings-card-actions">
+                  <button type="button" className="btn btn-primary" onClick={saveTelegram}>Save Telegram</button>
+                  <button type="button" className="btn btn-ghost" onClick={testAlert}>Test Alert</button>
+                </div>
+              )}
             </div>
 
-            {/* Lists */}
-            <div>
-              <div className="list-section !mt-0 !pt-0 !border-t-0">
-                <h4>Allowed Chat IDs</h4>
-                <div className="list-items">
-                  {telegram.allowedChatIds.map((id) => (
-                    <div key={id} className="list-chip">
-                      <span>{id}</span>
-                      <button className="chip-remove" onClick={() => removeFromList('chat-ids', id)}>×</button>
+            {/* Access control section */}
+            <div className="settings-subsection">
+              <h4 className="settings-subsection-title">Access Control</h4>
+
+              <div className="settings-list-group">
+                <div className="settings-list-header" onClick={() => setActiveSection(activeSection === 'chatIds' ? null : 'chatIds')}>
+                  <div>
+                    <span className="settings-list-title">Allowed Chat IDs</span>
+                    <span className="settings-list-count">{telegram.allowedChatIds.length}</span>
+                  </div>
+                  <span className={`settings-list-chevron ${activeSection === 'chatIds' ? 'open' : ''}`}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                {activeSection === 'chatIds' && (
+                  <div className="settings-list-body">
+                    <div className="list-items">
+                      {telegram.allowedChatIds.map((id) => (
+                        <div key={id} className="list-chip">
+                          <span>{id}</span>
+                          {canEdit && <button className="chip-remove" onClick={() => removeFromList('chat-ids', id)}>×</button>}
+                        </div>
+                      ))}
+                      {telegram.allowedChatIds.length === 0 && <span className="text-muted text-xs">No chat IDs added</span>}
                     </div>
-                  ))}
-                </div>
-                <div className="list-add">
-                  <input placeholder="Chat ID" value={newChatId} onChange={(e) => setNewChatId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addToList('chat-ids', newChatId))} />
-                  <button className="btn btn-sm btn-primary" onClick={() => addToList('chat-ids', newChatId)}>Add</button>
-                </div>
+                    {canEdit && (
+                      <div className="list-add">
+                        <input placeholder="Chat ID" value={newChatId} onChange={(e) => setNewChatId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addToList('chat-ids', newChatId))} />
+                        <button className="btn btn-sm btn-primary" onClick={() => addToList('chat-ids', newChatId)}>Add</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="list-section">
-                <h4>Alert Chat IDs</h4>
-                <div className="list-items">
-                  {telegram.alertChatIds.map((id) => (
-                    <div key={id} className="list-chip">
-                      <span>{id}</span>
-                      <button className="chip-remove" onClick={() => removeFromList('alert-chats', id)}>×</button>
+              <div className="settings-list-group">
+                <div className="settings-list-header" onClick={() => setActiveSection(activeSection === 'alertIds' ? null : 'alertIds')}>
+                  <div>
+                    <span className="settings-list-title">Alert Chat IDs</span>
+                    <span className="settings-list-count">{telegram.alertChatIds.length}</span>
+                  </div>
+                  <span className={`settings-list-chevron ${activeSection === 'alertIds' ? 'open' : ''}`}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                {activeSection === 'alertIds' && (
+                  <div className="settings-list-body">
+                    <div className="list-items">
+                      {telegram.alertChatIds.map((id) => (
+                        <div key={id} className="list-chip">
+                          <span>{id}</span>
+                          {canEdit && <button className="chip-remove" onClick={() => removeFromList('alert-chats', id)}>×</button>}
+                        </div>
+                      ))}
+                      {telegram.alertChatIds.length === 0 && <span className="text-muted text-xs">No alert chat IDs added</span>}
                     </div>
-                  ))}
-                </div>
-                <div className="list-add">
-                  <input placeholder="Alert Chat ID" value={newAlertId} onChange={(e) => setNewAlertId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addToList('alert-chats', newAlertId))} />
-                  <button className="btn btn-sm btn-primary" onClick={() => addToList('alert-chats', newAlertId)}>Add</button>
-                </div>
+                    {canEdit && (
+                      <div className="list-add">
+                        <input placeholder="Alert Chat ID" value={newAlertId} onChange={(e) => setNewAlertId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addToList('alert-chats', newAlertId))} />
+                        <button className="btn btn-sm btn-primary" onClick={() => addToList('alert-chats', newAlertId)}>Add</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <div className="list-section">
-                <h4>Allowed Usernames</h4>
-                <div className="list-items">
-                  {telegram.allowedUsernames.map((u) => (
-                    <div key={u} className="list-chip">
-                      <span>@{u}</span>
-                      <button className="chip-remove" onClick={() => removeFromList('usernames', u)}>×</button>
+              <div className="settings-list-group">
+                <div className="settings-list-header" onClick={() => setActiveSection(activeSection === 'usernames' ? null : 'usernames')}>
+                  <div>
+                    <span className="settings-list-title">Allowed Usernames</span>
+                    <span className="settings-list-count">{telegram.allowedUsernames.length}</span>
+                  </div>
+                  <span className={`settings-list-chevron ${activeSection === 'usernames' ? 'open' : ''}`}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="6 9 12 15 18 9"/></svg>
+                  </span>
+                </div>
+                {activeSection === 'usernames' && (
+                  <div className="settings-list-body">
+                    <div className="list-items">
+                      {telegram.allowedUsernames.map((u) => (
+                        <div key={u} className="list-chip">
+                          <span>@{u}</span>
+                          {canEdit && <button className="chip-remove" onClick={() => removeFromList('usernames', u)}>×</button>}
+                        </div>
+                      ))}
+                      {telegram.allowedUsernames.length === 0 && <span className="text-muted text-xs">No usernames added</span>}
                     </div>
-                  ))}
-                </div>
-                <div className="list-add">
-                  <input placeholder="Username (without @)" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addToList('usernames', newUsername))} />
-                  <button className="btn btn-sm btn-primary" onClick={() => addToList('usernames', newUsername)}>Add</button>
-                </div>
+                    {canEdit && (
+                      <div className="list-add">
+                        <input placeholder="Username (without @)" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addToList('usernames', newUsername))} />
+                        <button className="btn btn-sm btn-primary" onClick={() => addToList('usernames', newUsername)}>Add</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </section>
 
-        {/* Backup */}
-        <section className="card settings-section settings-full">
-          <h3>Backup &amp; Restore</h3>
-          <div className="flex gap-3 items-center">
-            <button
-              className="btn btn-primary"
-              onClick={async () => {
-                setError('');
-                try {
-                  const data = await api.get('/backup');
-                  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `scraper-backup-${new Date().toISOString().slice(0, 10)}.json`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                } catch (err: any) {
-                  setError(err.message || 'Export failed');
-                }
-              }}
-            >
-              Download Backup
-            </button>
-            <label className="btn btn-ghost cursor-pointer">
-              Restore from File
-              <input
-                type="file"
-                accept=".json"
-                className="hidden"
-                onChange={async (e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  if (!confirm('This will REPLACE all data. A pre-restore snapshot will be saved. Continue?')) return;
+        {/* ── Backup ── */}
+        <section className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-icon">{SECTION_ICONS.backup}</div>
+            <div>
+              <h3 className="settings-card-title">Backup & Restore</h3>
+              <p className="settings-card-desc">Export or restore your scraper data</p>
+            </div>
+          </div>
+
+          <div className="settings-card-body">
+            <div className="settings-backup-actions">
+              <button
+                className="settings-backup-btn"
+                onClick={async () => {
                   setError('');
                   try {
-                    const text = await file.text();
-                    const data = JSON.parse(text);
-                    await api.post('/backup/restore', data);
-                    showSuccess('Backup restored successfully.');
+                    const data = await api.get('/backup');
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `scraper-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
                   } catch (err: any) {
-                    setError(err.message || 'Restore failed');
+                    setError(err.message || 'Export failed');
                   }
-                  e.target.value = '';
                 }}
-              />
-            </label>
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <div>
+                  <div className="settings-backup-label">Download Backup</div>
+                  <div className="settings-backup-hint">Export all data as JSON</div>
+                </div>
+              </button>
+
+              <label className="settings-backup-btn restore">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div>
+                  <div className="settings-backup-label">Restore from File</div>
+                  <div className="settings-backup-hint">Import a backup JSON file</div>
+                </div>
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    if (!confirm('This will REPLACE all data. A pre-restore snapshot will be saved. Continue?')) return;
+                    setError('');
+                    try {
+                      const text = await file.text();
+                      const data = JSON.parse(text);
+                      await api.post('/backup/restore', data);
+                      showSuccess('Backup restored successfully.');
+                    } catch (err: any) {
+                      setError(err.message || 'Restore failed');
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            </div>
           </div>
         </section>
       </div>
