@@ -328,6 +328,37 @@ function StackedBar({ data, dates, theme }: {
   );
 }
 
+function SortHeader({ label, col, sort, onSort, align }: {
+  label: string; col: string;
+  sort: { col: string; dir: 'asc' | 'desc' };
+  onSort: (col: string) => void;
+  align?: 'left' | 'center' | 'right';
+}) {
+  const active = sort.col === col;
+  return (
+    <th
+      className={`cursor-pointer select-none hover:text-accent transition-colors ${align === 'right' ? 'text-right' : align === 'center' ? 'text-center' : ''}`}
+      onClick={() => onSort(col)}
+    >
+      <span className="inline-flex items-center gap-1" style={{ justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start' }}>
+        {label}
+        <span className={`text-[10px] ${active ? 'text-accent' : 'opacity-30'}`}>
+          {active ? (sort.dir === 'asc' ? '▲' : '▼') : '⇅'}
+        </span>
+      </span>
+    </th>
+  );
+}
+
+function toggleSort(
+  current: { col: string; dir: 'asc' | 'desc' },
+  col: string,
+  setter: (v: { col: string; dir: 'asc' | 'desc' }) => void,
+) {
+  if (current.col === col) setter({ col, dir: current.dir === 'asc' ? 'desc' : 'asc' });
+  else setter({ col, dir: 'desc' });
+}
+
 export default function ReportsPage() {
   const { hasPrivilege } = useAuth();
   const router = useRouter();
@@ -351,6 +382,9 @@ export default function ReportsPage() {
   const [chartMetric, setChartMetric] = useState<MetricKey>('totalDepositAmount');
   const [profileSearch, setProfileSearch] = useState('');
   const [showProfilePicker, setShowProfilePicker] = useState(false);
+
+  const [profileSort, setProfileSort] = useState<{ col: string; dir: 'asc' | 'desc' }>({ col: 'name', dir: 'asc' });
+  const [detailSort, setDetailSort] = useState<{ col: string; dir: 'asc' | 'desc' }>({ col: 'date', dir: 'desc' });
 
   useEffect(() => {
     if (!hasPrivilege('reports.view')) { router.replace('/'); return; }
@@ -410,6 +444,37 @@ export default function ReportsPage() {
     }
     return Object.entries(byP).map(([id, v]) => ({ id, ...v })).sort((a, b) => a.name.localeCompare(b.name));
   }, [data]);
+
+  const sortedProfileTotals = useMemo(() => {
+    const list = [...profileTotals];
+    const { col, dir } = profileSort;
+    const m = dir === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      if (col === 'name') return a.name.localeCompare(b.name) * m;
+      if (col === 'kind') return a.kind.localeCompare(b.kind) * m;
+      if (col === 'days') return (a.days - b.days) * m;
+      if (col === 'netFlow') {
+        const na = (a.t.totalDepositAmount || 0) - (a.t.totalWithdrawalAmount || 0);
+        const nb = (b.t.totalDepositAmount || 0) - (b.t.totalWithdrawalAmount || 0);
+        return (na - nb) * m;
+      }
+      return ((a.t[col] || 0) - (b.t[col] || 0)) * m;
+    });
+    return list;
+  }, [profileTotals, profileSort]);
+
+  const sortedDetailData = useMemo(() => {
+    const list = [...data];
+    const { col, dir } = detailSort;
+    const m = dir === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      if (col === 'date') return a.reportDateString.localeCompare(b.reportDateString) * m;
+      if (col === 'profile') return a.profile.name.localeCompare(b.profile.name) * m;
+      if (col === 'kind') return a.profile.kind.localeCompare(b.profile.kind) * m;
+      return (numVal(a[col as MetricKey]) - numVal(b[col as MetricKey])) * m;
+    });
+    return list;
+  }, [data, detailSort]);
 
   const platformAgg = useMemo(() => {
     const byKind: Record<string, { dep: number; wd: number; net: number; reg: number; count: number }> = {};
@@ -792,15 +857,15 @@ export default function ReportsPage() {
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Profile</th>
-                    <th>Kind</th>
-                    <th className="text-center">Days</th>
-                    {METRICS.map((m) => <th key={m.key} className="text-right">{m.short}</th>)}
-                    <th className="text-right">Net Flow</th>
+                    <SortHeader label="Profile" col="name" sort={profileSort} onSort={(c) => toggleSort(profileSort, c, setProfileSort)} />
+                    <SortHeader label="Kind" col="kind" sort={profileSort} onSort={(c) => toggleSort(profileSort, c, setProfileSort)} />
+                    <SortHeader label="Days" col="days" sort={profileSort} onSort={(c) => toggleSort(profileSort, c, setProfileSort)} align="center" />
+                    {METRICS.map((m) => <SortHeader key={m.key} label={m.short} col={m.key} sort={profileSort} onSort={(c) => toggleSort(profileSort, c, setProfileSort)} align="right" />)}
+                    <SortHeader label="Net Flow" col="netFlow" sort={profileSort} onSort={(c) => toggleSort(profileSort, c, setProfileSort)} align="right" />
                   </tr>
                 </thead>
                 <tbody>
-                  {profileTotals.map((p, idx) => {
+                  {sortedProfileTotals.map((p, idx) => {
                     const net = (p.t.totalDepositAmount || 0) - (p.t.totalWithdrawalAmount || 0);
                     const best: Record<string, boolean> = {};
                     for (const m of METRICS) {
@@ -847,14 +912,14 @@ export default function ReportsPage() {
               <table>
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Profile</th>
-                    <th>Kind</th>
-                    {METRICS.map((m) => <th key={m.key} className="text-right">{m.short}</th>)}
+                    <SortHeader label="Date" col="date" sort={detailSort} onSort={(c) => toggleSort(detailSort, c, setDetailSort)} />
+                    <SortHeader label="Profile" col="profile" sort={detailSort} onSort={(c) => toggleSort(detailSort, c, setDetailSort)} />
+                    <SortHeader label="Kind" col="kind" sort={detailSort} onSort={(c) => toggleSort(detailSort, c, setDetailSort)} />
+                    {METRICS.map((m) => <SortHeader key={m.key} label={m.short} col={m.key} sort={detailSort} onSort={(c) => toggleSort(detailSort, c, setDetailSort)} align="right" />)}
                   </tr>
                 </thead>
                 <tbody>
-                  {data.map((r) => (
+                  {sortedDetailData.map((r) => (
                     <tr key={r.id}>
                       <td className="cell-muted whitespace-nowrap">{formatDisplayDate(r.reportDateString)}</td>
                       <td className="cell-name">{r.profile.name}</td>
