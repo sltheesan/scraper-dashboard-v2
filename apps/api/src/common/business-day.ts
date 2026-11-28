@@ -12,23 +12,32 @@ export function parseCutover(cutover: string): { h: number; m: number } {
   return { h: Number(match[1]), m: Number(match[2]) };
 }
 
-function nowInICT(): Date {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
+function bangkokParts(d: Date): { year: number; month: number; day: number; hour: number; minute: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+  const get = (type: string) => parseInt(parts.find((p) => p.type === type)?.value || '0', 10);
+  return { year: get('year'), month: get('month'), day: get('day'), hour: get('hour'), minute: get('minute') };
 }
 
 export function businessDayDate(
   now: Date = new Date(),
   cutover: string = DEFAULT_CUTOVER,
 ): Date {
-  const ict = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
+  const bp = bangkokParts(now);
   const { h, m } = parseCutover(cutover);
   const cutoverMinutes = h * 60 + m;
-  const nowMinutes = ict.getHours() * 60 + ict.getMinutes();
+  const nowMinutes = bp.hour * 60 + bp.minute;
 
-  const d = new Date(ict);
-  d.setHours(0, 0, 0, 0);
+  let d = new Date(Date.UTC(bp.year, bp.month - 1, bp.day));
   if (nowMinutes < cutoverMinutes) {
-    d.setDate(d.getDate() - 1);
+    d.setUTCDate(d.getUTCDate() - 1);
   }
   return d;
 }
@@ -38,7 +47,7 @@ export function yesterdayBusinessDate(
   cutover: string = DEFAULT_CUTOVER,
 ): Date {
   const d = businessDayDate(now, cutover);
-  d.setDate(d.getDate() - 1);
+  d.setUTCDate(d.getUTCDate() - 1);
   return d;
 }
 
@@ -47,15 +56,13 @@ export function msUntilCutover(
   cutover: string = DEFAULT_CUTOVER,
   offsetMin: number = 0,
 ): number {
-  const ict = new Date(now.toLocaleString('en-US', { timeZone: TZ }));
+  const bp = bangkokParts(now);
   const { h, m } = parseCutover(cutover);
 
-  const next = new Date(ict);
-  next.setHours(h, m + offsetMin, 0, 0);
-  if (next.getTime() <= ict.getTime()) {
-    next.setDate(next.getDate() + 1);
-  }
-  return Math.max(next.getTime() - ict.getTime(), 60_000);
+  const nowMs = bp.hour * 3600_000 + bp.minute * 60_000;
+  let targetMs = (h * 60 + m + offsetMin) * 60_000;
+  if (targetMs <= nowMs) targetMs += 24 * 3600_000;
+  return Math.max(targetMs - nowMs, 60_000);
 }
 
 export function formatICT(date: Date = new Date()): string {

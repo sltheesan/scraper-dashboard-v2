@@ -541,9 +541,9 @@ export class ScraperService implements OnModuleDestroy {
   }
 
   private async setOneopsportalDate(page: Page, targetDate: Date): Promise<void> {
-    const yyyy = targetDate.getFullYear();
-    const mm = String(targetDate.getMonth() + 1).padStart(2, '0');
-    const dd = String(targetDate.getDate()).padStart(2, '0');
+    const yyyy = targetDate.getUTCFullYear();
+    const mm = String(targetDate.getUTCMonth() + 1).padStart(2, '0');
+    const dd = String(targetDate.getUTCDate()).padStart(2, '0');
     const dateStr = `${yyyy}/${mm}/${dd}`;
     const rangeStr = `${dateStr} - ${dateStr}`;
 
