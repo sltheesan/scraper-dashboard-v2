@@ -1196,18 +1196,13 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       if (png) {
-        if (messageId) {
-          await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
-        }
-        await this.sendPhoto(chatId, png, {
-          caption: this.settings.summaryText ? text : undefined,
-          reply_markup: kb,
-        });
+        const caption = this.settings.summaryText && text.length <= 1024 ? text : undefined;
+        await this.sendPhoto(chatId, png, { caption, reply_markup: kb });
         if (this.settings.summaryText && text.length > 1024) {
           await this.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup: kb });
         }
       } else {
-        await this.finishText(chatId, messageId ?? null, text, kb);
+        await this.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup: kb });
       }
     } catch (err: any) {
       this.logger.error(`Summary failed: ${err.message}`);
@@ -1260,7 +1255,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       };
 
       if (!scrapes.length) {
-        await this.finishText(chatId, messageId ?? null, `🏆 <b>Rankings — ${periodLabel}</b>\n\nNo data for ${periodLabel.toLowerCase()} yet.`, periodKb);
+        await this.sendMessage(chatId, `🏆 <b>Rankings — ${periodLabel}</b>\n\nNo data for ${periodLabel.toLowerCase()} yet.`, { parse_mode: 'HTML', reply_markup: periodKb });
         return;
       }
 
@@ -1322,18 +1317,13 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       if (png) {
-        if (messageId) {
-          await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
-        }
-        await this.sendPhoto(chatId, png, {
-          caption: this.settings.rankingsText ? text : undefined,
-          reply_markup: periodKb,
-        });
+        const caption = this.settings.rankingsText && text.length <= 1024 ? text : undefined;
+        await this.sendPhoto(chatId, png, { caption, reply_markup: periodKb });
         if (this.settings.rankingsText && text.length > 1024) {
           await this.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup: periodKb });
         }
       } else {
-        await this.finishText(chatId, messageId ?? null, text, periodKb);
+        await this.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup: periodKb });
       }
     } catch (err: any) {
       this.logger.error(`Rankings failed: ${err.message}`);
@@ -1396,18 +1386,13 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       if (png) {
-        if (messageId) {
-          await this.call('deleteMessage', { chat_id: chatId, message_id: messageId }).catch(() => {});
-        }
-        await this.sendPhoto(chatId, png, {
-          caption: this.settings.statusText ? text : undefined,
-          reply_markup: kb,
-        });
+        const caption = this.settings.statusText && text.length <= 1024 ? text : undefined;
+        await this.sendPhoto(chatId, png, { caption, reply_markup: kb });
         if (this.settings.statusText && text.length > 1024) {
           await this.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup: kb });
         }
       } else {
-        await this.finishText(chatId, messageId ?? null, text, kb);
+        await this.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup: kb });
       }
     } catch (err: any) {
       this.logger.error(`Status check failed: ${err.message}`);
