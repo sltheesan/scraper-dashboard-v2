@@ -23,6 +23,23 @@ const TELEGRAM_DEFAULTS = {
   sendImage: true,
   sendText: true,
   alertChatIds: [] as string[],
+  features: {
+    summary: true,
+    rankings: true,
+    statusCheck: true,
+    pinFavorites: true,
+    scheduledPush: false,
+    thresholdAlerts: false,
+  },
+  pinnedProfiles: [] as string[],
+  scheduledPush: {
+    time: '11:30',
+    lastSentDate: '',
+  },
+  thresholdAlerts: {
+    depositDropPercent: 30,
+    negativeNetFlow: true,
+  },
 };
 
 @Injectable()
@@ -73,6 +90,15 @@ export class SettingsService {
   async updateTelegramSettings(data: any) {
     const current = await this.getTelegramSettings();
     const merged = { ...current, ...data };
+    if (data.features) {
+      merged.features = { ...current.features, ...data.features };
+    }
+    if (data.scheduledPush) {
+      merged.scheduledPush = { ...current.scheduledPush, ...data.scheduledPush };
+    }
+    if (data.thresholdAlerts) {
+      merged.thresholdAlerts = { ...current.thresholdAlerts, ...data.thresholdAlerts };
+    }
     return this.upsertSetting('telegram', merged);
   }
 
@@ -124,5 +150,21 @@ export class SettingsService {
       (u: string) => u !== normalized,
     );
     return this.upsertSetting('telegram', settings);
+  }
+
+  async togglePinnedProfile(profileId: string): Promise<boolean> {
+    const settings = await this.getTelegramSettings();
+    const pinned: string[] = settings.pinnedProfiles || [];
+    const idx = pinned.indexOf(profileId);
+    if (idx >= 0) {
+      pinned.splice(idx, 1);
+      settings.pinnedProfiles = pinned;
+      await this.upsertSetting('telegram', settings);
+      return false;
+    }
+    pinned.push(profileId);
+    settings.pinnedProfiles = pinned;
+    await this.upsertSetting('telegram', settings);
+    return true;
   }
 }

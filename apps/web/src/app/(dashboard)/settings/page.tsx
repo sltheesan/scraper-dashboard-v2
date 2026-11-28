@@ -17,6 +17,15 @@ interface SchedulerSettings {
   platforms?: Record<string, PlatformConfig>;
 }
 
+interface TelegramFeatures {
+  summary: boolean;
+  rankings: boolean;
+  statusCheck: boolean;
+  pinFavorites: boolean;
+  scheduledPush: boolean;
+  thresholdAlerts: boolean;
+}
+
 interface TelegramSettings {
   restricted: boolean;
   sendImage: boolean;
@@ -26,6 +35,10 @@ interface TelegramSettings {
   allowedUsernames: string[];
   bot?: { username: string; id: number } | null;
   tokenPreview?: string;
+  features?: TelegramFeatures;
+  pinnedProfiles?: string[];
+  scheduledPush?: { time: string; lastSentDate: string };
+  thresholdAlerts?: { depositDropPercent: number; negativeNetFlow: boolean };
 }
 
 const SECTION_ICONS = {
@@ -95,6 +108,9 @@ export default function SettingsPage() {
         restricted: telegram.restricted,
         sendImage: telegram.sendImage,
         sendText: telegram.sendText,
+        features: telegram.features,
+        scheduledPush: telegram.scheduledPush,
+        thresholdAlerts: telegram.thresholdAlerts,
       });
       const t = await api.get<TelegramSettings>('/settings/telegram');
       setTelegram(t);
@@ -393,6 +409,105 @@ export default function SettingsPage() {
                   <span className="toggle-slider" />
                 </label>
               </div>
+
+              {canEdit && (
+                <div className="settings-card-actions">
+                  <button type="button" className="btn btn-primary" onClick={saveTelegram}>Save Telegram</button>
+                  <button type="button" className="btn btn-ghost" onClick={testAlert}>Test Alert</button>
+                </div>
+              )}
+            </div>
+
+            {/* Bot Features section */}
+            <div className="settings-subsection">
+              <h4 className="settings-subsection-title">Bot Features</h4>
+
+              {([
+                { key: 'summary' as const, label: 'Summary', desc: 'All-profiles consolidated totals' },
+                { key: 'rankings' as const, label: 'Rankings', desc: 'Top/bottom profiles by deposits' },
+                { key: 'statusCheck' as const, label: 'Status Check', desc: 'Session status overview' },
+                { key: 'pinFavorites' as const, label: 'Pin Favorites', desc: 'Star key profiles to show first' },
+                { key: 'scheduledPush' as const, label: 'Scheduled Push', desc: 'Auto-send daily summary' },
+                { key: 'thresholdAlerts' as const, label: 'Threshold Alerts', desc: 'Alert on metric drops' },
+              ] as const).map(({ key, label, desc }) => (
+                <div key={key} className="settings-row">
+                  <div className="settings-row-label">
+                    <span>{label}</span>
+                    <span className="settings-desc">{desc}</span>
+                  </div>
+                  <label className="toggle">
+                    <input
+                      type="checkbox"
+                      checked={telegram.features?.[key] ?? false}
+                      onChange={(e) => setTelegram({
+                        ...telegram,
+                        features: { ...telegram.features!, [key]: e.target.checked },
+                      })}
+                    />
+                    <span className="toggle-slider" />
+                  </label>
+                </div>
+              ))}
+
+              {telegram.features?.scheduledPush && (
+                <div className="settings-row">
+                  <div className="settings-row-label">
+                    <span>Push Time (ICT)</span>
+                    <span className="settings-desc">Daily summary sent at this time</span>
+                  </div>
+                  <input
+                    type="time"
+                    className="settings-input"
+                    value={telegram.scheduledPush?.time || '11:30'}
+                    onChange={(e) => setTelegram({
+                      ...telegram,
+                      scheduledPush: { ...telegram.scheduledPush!, time: e.target.value },
+                    })}
+                  />
+                </div>
+              )}
+
+              {telegram.features?.thresholdAlerts && (
+                <>
+                  <div className="settings-row">
+                    <div className="settings-row-label">
+                      <span>Deposit Drop %</span>
+                      <span className="settings-desc">Alert when deposits drop by this percentage</span>
+                    </div>
+                    <div className="settings-input-group">
+                      <input
+                        type="number"
+                        className="settings-input"
+                        min={5}
+                        max={100}
+                        value={telegram.thresholdAlerts?.depositDropPercent ?? 30}
+                        onChange={(e) => setTelegram({
+                          ...telegram,
+                          thresholdAlerts: { ...telegram.thresholdAlerts!, depositDropPercent: Number(e.target.value) },
+                        })}
+                      />
+                      <span className="settings-input-suffix">%</span>
+                    </div>
+                  </div>
+                  <div className="settings-row">
+                    <div className="settings-row-label">
+                      <span>Negative Net Flow</span>
+                      <span className="settings-desc">Alert when net flow goes negative</span>
+                    </div>
+                    <label className="toggle">
+                      <input
+                        type="checkbox"
+                        checked={telegram.thresholdAlerts?.negativeNetFlow ?? true}
+                        onChange={(e) => setTelegram({
+                          ...telegram,
+                          thresholdAlerts: { ...telegram.thresholdAlerts!, negativeNetFlow: e.target.checked },
+                        })}
+                      />
+                      <span className="toggle-slider" />
+                    </label>
+                  </div>
+                </>
+              )}
 
               {canEdit && (
                 <div className="settings-card-actions">

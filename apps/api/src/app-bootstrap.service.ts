@@ -6,6 +6,7 @@ import { ScrapesService } from './scrapes/scrapes.service';
 import { ScraperService } from './scraper/scraper.service';
 import { TelegramService } from './telegram/telegram.service';
 import { SettingsController } from './settings/settings.controller';
+import { SettingsService } from './settings/settings.service';
 import { ProfilesController } from './profiles/profiles.controller';
 import { BackupService } from './backup/backup.service';
 
@@ -18,6 +19,7 @@ export class AppBootstrapService implements OnApplicationBootstrap {
     private readonly scrapes: ScrapesService,
     private readonly scraper: ScraperService,
     private readonly telegram: TelegramService,
+    private readonly settingsService: SettingsService,
     private readonly backup: BackupService,
   ) {}
 
@@ -29,6 +31,7 @@ export class AppBootstrapService implements OnApplicationBootstrap {
     this.dailyCapture.setTelegramService(this.telegram);
     this.telegram.setScrapesService(this.scrapes);
     this.telegram.setScraperService(this.scraper);
+    this.telegram.setSettingsService(this.settingsService);
 
     this.backup.setSchedulerService(this.scheduler);
 

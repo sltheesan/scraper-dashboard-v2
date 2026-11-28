@@ -7,6 +7,15 @@ import { formatICT, formatICTDate } from '../common/business-day';
 import { renderProfileCard, closeRenderer } from './image-render';
 import { currencyForPlatform, getExchangeRates, convertedLabels, CurrencyInfo } from '../common/currency';
 
+export interface TelegramFeatures {
+  summary: boolean;
+  rankings: boolean;
+  statusCheck: boolean;
+  pinFavorites: boolean;
+  scheduledPush: boolean;
+  thresholdAlerts: boolean;
+}
+
 export interface TelegramSettings {
   restricted: boolean;
   allowedChatIds: string[];
@@ -14,6 +23,10 @@ export interface TelegramSettings {
   sendImage: boolean;
   sendText: boolean;
   alertChatIds: string[];
+  features: TelegramFeatures;
+  pinnedProfiles: string[];
+  scheduledPush: { time: string; lastSentDate: string };
+  thresholdAlerts: { depositDropPercent: number; negativeNetFlow: boolean };
 }
 
 const DEFAULT_TELEGRAM_SETTINGS: TelegramSettings = {
@@ -23,6 +36,17 @@ const DEFAULT_TELEGRAM_SETTINGS: TelegramSettings = {
   sendImage: true,
   sendText: true,
   alertChatIds: [],
+  features: {
+    summary: true,
+    rankings: true,
+    statusCheck: true,
+    pinFavorites: true,
+    scheduledPush: false,
+    thresholdAlerts: false,
+  },
+  pinnedProfiles: [],
+  scheduledPush: { time: '11:30', lastSentDate: '' },
+  thresholdAlerts: { depositDropPercent: 30, negativeNetFlow: true },
 };
 
 function esc(s: string | null | undefined): string {
@@ -58,7 +82,9 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private settings: TelegramSettings = { ...DEFAULT_TELEGRAM_SETTINGS };
   private scrapesService: any = null;
   private scraperService: any = null;
+  private settingsService: any = null;
   private readonly inFlight = new Set<string>();
+  private pushTimer: ReturnType<typeof setInterval> | null = null;
 
   constructor(
     private readonly config: ConfigService,
@@ -82,6 +108,10 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     this.scraperService = service;
   }
 
+  setSettingsService(service: any) {
+    this.settingsService = service;
+  }
+
   async onModuleInit() {
     await this.loadSettings();
     const dbToken = await this.loadTokenFromDb();
@@ -93,6 +123,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     } else {
       this.logger.warn('No TELEGRAM_BOT_TOKEN configured, bot disabled');
     }
+    this.startPushTimer();
   }
 
   private async loadTokenFromDb(): Promise<string | null> {
@@ -139,6 +170,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
 
   onModuleDestroy() {
     this.stop();
+    if (this.pushTimer) { clearInterval(this.pushTimer); this.pushTimer = null; }
     closeRenderer().catch(() => {});
   }
 
@@ -337,7 +369,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    await this.sendProfileList(chatId);
+    await this.sendMainMenu(chatId);
   }
 
   private async handleCallback(cq: any) {
@@ -354,9 +386,45 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
+    if (data === 'menu') {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
+      await this.sendMainMenu(chatId, messageId);
+      return;
+    }
+
     if (data === 'list') {
       await this.call('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
       await this.sendProfileList(chatId, messageId);
+      return;
+    }
+
+    if (data === 'summary') {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id, text: 'Loading summary…' }).catch(() => {});
+      await this.doSummary(chatId, messageId);
+      return;
+    }
+
+    if (data === 'rankings') {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id, text: 'Loading rankings…' }).catch(() => {});
+      await this.doRankings(chatId, messageId);
+      return;
+    }
+
+    if (data === 'status') {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id, text: 'Loading status…' }).catch(() => {});
+      await this.doStatus(chatId, messageId);
+      return;
+    }
+
+    if (data.startsWith('pin:')) {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
+      await this.doTogglePin(chatId, data.slice(4));
+      return;
+    }
+
+    if (data.startsWith('unpin:')) {
+      await this.call('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
+      await this.doTogglePin(chatId, data.slice(6));
       return;
     }
 
@@ -390,9 +458,38 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     await this.call('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
   }
 
+  // --- Main menu ---
+
+  private async sendMainMenu(chatId: number, messageId?: number) {
+    await this.loadSettings();
+    const feat = this.settings.features || {} as TelegramFeatures;
+
+    const row1 = [{ text: '📋 Profiles', callback_data: 'list' }];
+    if (feat.summary) row1.push({ text: '📊 Summary', callback_data: 'summary' });
+
+    const row2: { text: string; callback_data: string }[] = [];
+    if (feat.rankings) row2.push({ text: '🏆 Rankings', callback_data: 'rankings' });
+    if (feat.statusCheck) row2.push({ text: '🔍 Status', callback_data: 'status' });
+
+    const rows = [row1];
+    if (row2.length) rows.push(row2);
+
+    const text = '📋 <b>Scraper Dashboard</b>\nChoose an option:';
+    const payload: any = { chat_id: chatId, text, parse_mode: 'HTML', reply_markup: { inline_keyboard: rows } };
+
+    if (messageId) {
+      await this.call('editMessageText', { ...payload, message_id: messageId }).catch(() =>
+        this.call('sendMessage', payload),
+      );
+    } else {
+      await this.call('sendMessage', payload);
+    }
+  }
+
   // --- Profile list ---
 
   private async sendProfileList(chatId: number, messageId?: number) {
+    await this.loadSettings();
     const profiles = await this.prisma.profile.findMany({
       orderBy: { name: 'asc' },
     });
@@ -402,11 +499,19 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    const buttons = profiles.map((p) => ({
-      text: p.name,
+    const pinned = new Set(this.settings.pinnedProfiles || []);
+    const sorted = [
+      ...profiles.filter((p) => pinned.has(p.id)),
+      ...profiles.filter((p) => !pinned.has(p.id)),
+    ];
+
+    const buttons = sorted.map((p) => ({
+      text: (pinned.has(p.id) ? '⭐ ' : '') + p.name,
       callback_data: `f:${p.id}`,
     }));
-    const reply_markup = { inline_keyboard: chunk(buttons, 2) };
+    const rows = chunk(buttons, 2);
+    rows.push([{ text: '‹ Back to menu', callback_data: 'menu' }]);
+    const reply_markup = { inline_keyboard: rows };
     const text = `📋 <b>Select a profile to fetch</b>  (${profiles.length})`;
     const payload = { chat_id: chatId, text, parse_mode: 'HTML', reply_markup };
 
@@ -523,16 +628,32 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
   }
 
   private resultKeyboard(profileId: string) {
-    return {
-      inline_keyboard: [
-        [
-          { text: '🔄 Today', callback_data: `f:${profileId}` },
-          { text: '📅 Yesterday', callback_data: `y:${profileId}` },
-        ],
-        [{ text: '📊 Both', callback_data: `b:${profileId}` }],
-        [{ text: '‹ Back to list', callback_data: 'list' }],
+    const pinned = new Set(this.settings.pinnedProfiles || []);
+    const isPinned = pinned.has(profileId);
+    const feat = this.settings.features || {} as TelegramFeatures;
+
+    const rows: { text: string; callback_data: string }[][] = [
+      [
+        { text: '🔄 Today', callback_data: `f:${profileId}` },
+        { text: '📅 Yesterday', callback_data: `y:${profileId}` },
       ],
-    };
+      [{ text: '📊 Both', callback_data: `b:${profileId}` }],
+    ];
+
+    if (feat.pinFavorites) {
+      rows[1].push(
+        isPinned
+          ? { text: '📌 Unpin', callback_data: `unpin:${profileId}` }
+          : { text: '📌 Pin', callback_data: `pin:${profileId}` },
+      );
+    }
+
+    rows.push([
+      { text: '‹ Back to list', callback_data: 'list' },
+      { text: '‹ Menu', callback_data: 'menu' },
+    ]);
+
+    return { inline_keyboard: rows };
   }
 
   private async finishText(
@@ -743,6 +864,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
             profileId: profile.id,
             message: `Telegram fetch: ${this.settings.sendText ? 'image + text' : 'image'} sent`,
           });
+          if (period === 'today') this.checkThresholdAlerts(profile, parsed).catch(() => {});
           return;
         }
 
@@ -754,6 +876,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
             ? 'Telegram fetch: image failed, sent text'
             : 'Telegram fetch: text sent',
         });
+        if (period === 'today') this.checkThresholdAlerts(profile, parsed).catch(() => {});
         return;
       }
 
@@ -898,6 +1021,381 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         `❌ <b>${esc(profile.name)}</b>\nFetch failed: ${esc(err.message)}`, kb);
     } finally {
       this.inFlight.delete(profile.id);
+    }
+  }
+
+  // --- Summary (all profiles) ---
+
+  private async doSummary(chatId: number, messageId?: number) {
+    try {
+      const profiles = await this.prisma.profile.findMany();
+      const { businessDayDate } = await import('../common/business-day');
+      const today = businessDayDate();
+
+      const scrapes = await this.prisma.scrape.findMany({
+        where: { reportDate: today },
+        include: { profile: true },
+      });
+
+      const byPlatform: Record<string, { dep: number; with: number; count: number }> = {};
+      let totalDep = 0;
+      let totalWith = 0;
+      let totalProfiles = 0;
+
+      for (const s of scrapes) {
+        const dep = s.totalDepositAmount ? Number(s.totalDepositAmount) : 0;
+        const wit = s.totalWithdrawalAmount ? Number(s.totalWithdrawalAmount) : 0;
+        totalDep += dep;
+        totalWith += wit;
+        totalProfiles++;
+        const kind = s.profile?.kind || 'UNKNOWN';
+        if (!byPlatform[kind]) byPlatform[kind] = { dep: 0, with: 0, count: 0 };
+        byPlatform[kind].dep += dep;
+        byPlatform[kind].with += wit;
+        byPlatform[kind].count++;
+      }
+
+      const timeStr = formatICT();
+      const lines: string[] = [
+        `📊 <b>Summary — All Profiles</b>`,
+        `🕒 ${esc(timeStr)}`,
+        ``,
+        `<pre>`,
+        `Profiles fetched: ${totalProfiles}/${profiles.length}`,
+        ``,
+      ];
+
+      for (const [kind, data] of Object.entries(byPlatform)) {
+        const net = data.dep - data.with;
+        lines.push(`${kind} (${data.count} profiles)`);
+        lines.push(`  Deposits:    ${fmtNum(data.dep)}`);
+        lines.push(`  Withdrawals: ${fmtNum(data.with)}`);
+        lines.push(`  Net Flow:    ${(net >= 0 ? '+' : '')}${fmtNum(net)}`);
+        lines.push(``);
+      }
+
+      lines.push(`─`.repeat(30));
+      const totalNet = totalDep - totalWith;
+      lines.push(`TOTAL`);
+      lines.push(`  Deposits:    ${fmtNum(totalDep)}`);
+      lines.push(`  Withdrawals: ${fmtNum(totalWith)}`);
+      lines.push(`  Net Flow:    ${(totalNet >= 0 ? '+' : '')}${fmtNum(totalNet)}`);
+      lines.push(`</pre>`);
+
+      const rates = await getExchangeRates();
+      if (rates) {
+        const convParts: string[] = [];
+        for (const [kind, data] of Object.entries(byPlatform)) {
+          const currency = currencyForPlatform(kind);
+          const labels = convertedLabels(data.dep, currency, rates);
+          if (labels.length) convParts.push(`${kind} dep: ${labels.join(' · ')}`);
+        }
+        if (convParts.length) {
+          lines.push(`\n<i>${convParts.map(esc).join('\n')}</i>`);
+        }
+      }
+
+      if (profiles.length > totalProfiles) {
+        const missing = profiles.filter((p) => !scrapes.find((s) => s.profileId === p.id));
+        const missingNames = missing.slice(0, 5).map((p) => p.name).join(', ');
+        const extra = missing.length > 5 ? ` +${missing.length - 5} more` : '';
+        lines.push(`\n⚠️ <i>Not fetched: ${esc(missingNames)}${extra}</i>`);
+      }
+
+      const text = lines.join('\n');
+      const kb = { inline_keyboard: [[{ text: '‹ Back to menu', callback_data: 'menu' }]] };
+      await this.finishText(chatId, messageId ?? null, text, kb);
+    } catch (err: any) {
+      this.logger.error(`Summary failed: ${err.message}`);
+      await this.sendMessage(chatId, `❌ Summary failed: ${esc(err.message)}`, { parse_mode: 'HTML' });
+    }
+  }
+
+  // --- Rankings ---
+
+  private async doRankings(chatId: number, messageId?: number) {
+    try {
+      const { businessDayDate } = await import('../common/business-day');
+      const today = businessDayDate();
+
+      const scrapes = await this.prisma.scrape.findMany({
+        where: { reportDate: today },
+        include: { profile: true },
+      });
+
+      if (!scrapes.length) {
+        const kb = { inline_keyboard: [[{ text: '‹ Back to menu', callback_data: 'menu' }]] };
+        await this.finishText(chatId, messageId ?? null, '🏆 <b>Rankings</b>\n\nNo data for today yet.', kb);
+        return;
+      }
+
+      const ranked = scrapes
+        .map((s) => ({
+          name: s.profile?.name || 'Unknown',
+          dep: s.totalDepositAmount ? Number(s.totalDepositAmount) : 0,
+          with: s.totalWithdrawalAmount ? Number(s.totalWithdrawalAmount) : 0,
+        }))
+        .sort((a, b) => b.dep - a.dep);
+
+      const maxDep = ranked[0]?.dep || 1;
+      const lines: string[] = [
+        `🏆 <b>Rankings — By Deposits</b>`,
+        `🕒 ${esc(formatICT())}`,
+        ``,
+        `<pre>`,
+      ];
+
+      for (let i = 0; i < ranked.length; i++) {
+        const r = ranked[i];
+        const barLen = Math.max(1, Math.round((r.dep / maxDep) * 10));
+        const bar = '█'.repeat(barLen) + '░'.repeat(10 - barLen);
+        const net = r.dep - r.with;
+        const name = r.name.length > 10 ? r.name.slice(0, 9) + '…' : r.name;
+        lines.push(`${String(i + 1).padStart(2)}. ${name.padEnd(10)} ${bar} ${fmtNum(r.dep)}`);
+      }
+      lines.push(`</pre>`);
+
+      const topNet = [...ranked].sort((a, b) => (b.dep - b.with) - (a.dep - a.with));
+      lines.push(``);
+      lines.push(`<b>Net Flow Leaders:</b>`);
+      for (let i = 0; i < Math.min(3, topNet.length); i++) {
+        const r = topNet[i];
+        const net = r.dep - r.with;
+        lines.push(`  ${i + 1}. ${esc(r.name)}: ${net >= 0 ? '+' : ''}${fmtNum(net)}`);
+      }
+
+      if (topNet.length > 3) {
+        lines.push(``);
+        lines.push(`<b>Lowest Net Flow:</b>`);
+        for (let i = Math.max(topNet.length - 3, 3); i < topNet.length; i++) {
+          const r = topNet[i];
+          const net = r.dep - r.with;
+          lines.push(`  ${i + 1}. ${esc(r.name)}: ${net >= 0 ? '+' : ''}${fmtNum(net)}`);
+        }
+      }
+
+      const text = lines.join('\n');
+      const kb = { inline_keyboard: [[{ text: '‹ Back to menu', callback_data: 'menu' }]] };
+      await this.finishText(chatId, messageId ?? null, text, kb);
+    } catch (err: any) {
+      this.logger.error(`Rankings failed: ${err.message}`);
+      await this.sendMessage(chatId, `❌ Rankings failed: ${esc(err.message)}`, { parse_mode: 'HTML' });
+    }
+  }
+
+  // --- Status Check ---
+
+  private async doStatus(chatId: number, messageId?: number) {
+    try {
+      const profiles = await this.prisma.profile.findMany({ orderBy: { name: 'asc' } });
+
+      const statusIcon: Record<string, string> = {
+        LOGGED_IN: '🟢',
+        LOGGED_OUT: '🔴',
+        ERROR: '🟡',
+        ACCESS_DENIED: '🚫',
+        NEVER: '⚪',
+      };
+
+      const groups: Record<string, string[]> = {};
+      for (const p of profiles) {
+        const s = p.status || 'NEVER';
+        if (!groups[s]) groups[s] = [];
+        groups[s].push(p.name);
+      }
+
+      const lines: string[] = [
+        `🔍 <b>Status Check</b>`,
+        `🕒 ${esc(formatICT())}`,
+        ``,
+      ];
+
+      const order = ['LOGGED_IN', 'LOGGED_OUT', 'ACCESS_DENIED', 'ERROR', 'NEVER'];
+      for (const status of order) {
+        const names = groups[status];
+        if (!names?.length) continue;
+        const icon = statusIcon[status] || '❓';
+        const label = status.replace('_', ' ');
+        lines.push(`${icon} <b>${label}</b> (${names.length})`);
+        for (const name of names) {
+          lines.push(`   ${esc(name)}`);
+        }
+        lines.push(``);
+      }
+
+      const loggedIn = groups['LOGGED_IN']?.length || 0;
+      lines.push(`<i>${loggedIn}/${profiles.length} profiles online</i>`);
+
+      const text = lines.join('\n');
+      const kb = { inline_keyboard: [[{ text: '‹ Back to menu', callback_data: 'menu' }]] };
+      await this.finishText(chatId, messageId ?? null, text, kb);
+    } catch (err: any) {
+      this.logger.error(`Status check failed: ${err.message}`);
+      await this.sendMessage(chatId, `❌ Status check failed: ${esc(err.message)}`, { parse_mode: 'HTML' });
+    }
+  }
+
+  // --- Pin/Unpin ---
+
+  private async doTogglePin(chatId: number, profileId: string) {
+    try {
+      if (!this.settingsService) {
+        await this.sendMessage(chatId, '❌ Settings service not available.');
+        return;
+      }
+      const isPinned = await this.settingsService.togglePinnedProfile(profileId);
+      await this.loadSettings();
+
+      const profile = await this.prisma.profile.findUnique({ where: { id: profileId } });
+      const name = profile?.name || 'Profile';
+      const msg = isPinned
+        ? `📌 <b>${esc(name)}</b> pinned — it will appear first in the list.`
+        : `📌 <b>${esc(name)}</b> unpinned.`;
+      await this.sendMessage(chatId, msg, { parse_mode: 'HTML' });
+    } catch (err: any) {
+      this.logger.error(`Pin toggle failed: ${err.message}`);
+      await this.sendMessage(chatId, `❌ Pin failed: ${esc(err.message)}`, { parse_mode: 'HTML' });
+    }
+  }
+
+  // --- Scheduled Push ---
+
+  private startPushTimer() {
+    if (this.pushTimer) { clearInterval(this.pushTimer); this.pushTimer = null; }
+    this.pushTimer = setInterval(() => this.checkScheduledPush(), 60_000);
+  }
+
+  private async checkScheduledPush() {
+    try {
+      await this.loadSettings();
+      if (!this.settings.features?.scheduledPush) return;
+      if (!this.token || !this.settings.alertChatIds.length) return;
+
+      const pushCfg = this.settings.scheduledPush || { time: '11:30', lastSentDate: '' };
+      const [targetH, targetM] = pushCfg.time.split(':').map(Number);
+
+      const now = new Date();
+      const bangkokTime = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', hour12: false,
+      }).formatToParts(now);
+      const getP = (type: string) => parseInt(bangkokTime.find((p) => p.type === type)?.value || '0', 10);
+      const nowH = getP('hour');
+      const nowM = getP('minute');
+
+      if (nowH !== targetH || nowM !== targetM) return;
+
+      const dateStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(now);
+      if (pushCfg.lastSentDate === dateStr) return;
+
+      await this.saveSettings({
+        ...this.settings,
+        scheduledPush: { ...pushCfg, lastSentDate: dateStr },
+      } as any);
+
+      const summaryText = await this.buildSummaryText();
+      const header = `⏰ <b>Scheduled Daily Summary</b>\n${summaryText}`;
+
+      for (const chatId of this.settings.alertChatIds) {
+        await this.sendMessage(chatId, header, { parse_mode: 'HTML' }).catch(() => {});
+      }
+
+      this.logs.logEvent({ type: 'telegram', message: `Scheduled push sent to ${this.settings.alertChatIds.length} chats` });
+    } catch (err: any) {
+      this.logger.error(`Scheduled push failed: ${err.message}`);
+    }
+  }
+
+  private async buildSummaryText(): Promise<string> {
+    const { businessDayDate } = await import('../common/business-day');
+    const today = businessDayDate();
+    const profiles = await this.prisma.profile.findMany();
+    const scrapes = await this.prisma.scrape.findMany({
+      where: { reportDate: today },
+      include: { profile: true },
+    });
+
+    let totalDep = 0, totalWith = 0;
+    for (const s of scrapes) {
+      totalDep += s.totalDepositAmount ? Number(s.totalDepositAmount) : 0;
+      totalWith += s.totalWithdrawalAmount ? Number(s.totalWithdrawalAmount) : 0;
+    }
+    const net = totalDep - totalWith;
+
+    const lines: string[] = [
+      `🕒 ${esc(formatICT())}`,
+      ``,
+      `<pre>`,
+      `Profiles: ${scrapes.length}/${profiles.length} fetched`,
+      `Deposits:    ${fmtNum(totalDep)}`,
+      `Withdrawals: ${fmtNum(totalWith)}`,
+      `Net Flow:    ${(net >= 0 ? '+' : '')}${fmtNum(net)}`,
+      `</pre>`,
+    ];
+
+    const loggedOut = profiles.filter((p) => p.status === 'LOGGED_OUT' || p.status === 'ACCESS_DENIED');
+    if (loggedOut.length) {
+      lines.push(`\n⚠️ <i>${loggedOut.length} profile(s) need attention: ${loggedOut.map((p) => esc(p.name)).join(', ')}</i>`);
+    }
+
+    return lines.join('\n');
+  }
+
+  // --- Threshold Alerts ---
+
+  async checkThresholdAlerts(profile: { id: string; name: string; kind: string }, todayParsed: any) {
+    try {
+      await this.loadSettings();
+      if (!this.settings.features?.thresholdAlerts) return;
+      if (!this.token || !this.settings.alertChatIds.length) return;
+
+      const cfg = this.settings.thresholdAlerts;
+      if (!cfg) return;
+
+      const { yesterdayBusinessDate } = await import('../common/business-day');
+      const yesterday = yesterdayBusinessDate();
+      const yScrape = await this.prisma.scrape.findFirst({
+        where: { profileId: profile.id, reportDate: yesterday },
+      });
+
+      if (!yScrape) return;
+
+      const tDep = todayParsed?.data?.totalDepositAmount != null ? Number(todayParsed.data.totalDepositAmount) : null;
+      const yDep = yScrape.totalDepositAmount ? Number(yScrape.totalDepositAmount) : null;
+      const tWith = todayParsed?.data?.totalWithdrawalAmount != null ? Number(todayParsed.data.totalWithdrawalAmount) : null;
+      const yWith = yScrape.totalWithdrawalAmount ? Number(yScrape.totalWithdrawalAmount) : null;
+
+      const alerts: string[] = [];
+
+      if (cfg.depositDropPercent && tDep != null && yDep != null && yDep > 0) {
+        const dropPct = ((yDep - tDep) / yDep) * 100;
+        if (dropPct >= cfg.depositDropPercent) {
+          alerts.push(`📉 Deposits dropped ${dropPct.toFixed(1)}% (${fmtNum(yDep)} → ${fmtNum(tDep)})`);
+        }
+      }
+
+      if (cfg.negativeNetFlow && tDep != null && tWith != null) {
+        const tNet = tDep - tWith;
+        if (tNet < 0) {
+          alerts.push(`⚠️ Net flow is negative: ${fmtNum(tNet)}`);
+        }
+      }
+
+      if (!alerts.length) return;
+
+      const text = [
+        `🔔 <b>Threshold Alert — ${esc(profile.name)}</b>`,
+        `🕒 ${esc(formatICT())}`,
+        ``,
+        ...alerts,
+      ].join('\n');
+
+      for (const chatId of this.settings.alertChatIds) {
+        await this.sendMessage(chatId, text, { parse_mode: 'HTML' }).catch(() => {});
+      }
+
+      this.logs.logEvent({ type: 'alert', message: `Threshold alert for ${profile.name}: ${alerts.length} trigger(s)` });
+    } catch (err: any) {
+      this.logger.error(`Threshold alert check failed: ${err.message}`);
     }
   }
 
