@@ -434,10 +434,8 @@ export default function ProfilesPage() {
     const profile = profiles.find((p) => p.id === id);
     setBusyActions((prev) => ({ ...prev, [id]: 'full' }));
     try {
-      const [todayRes, yesterdayRes] = await Promise.all([
-        api.post<any>(`/profiles/${id}/fetch`, { period: 'today' }).catch((e: any) => ({ error: e.message })),
-        api.post<any>(`/profiles/${id}/fetch`, { period: 'yesterday' }).catch((e: any) => ({ error: e.message })),
-      ]);
+      const todayRes = await api.post<any>(`/profiles/${id}/fetch`, { period: 'today' }).catch((e: any) => ({ error: e.message }));
+      const yesterdayRes = await api.post<any>(`/profiles/${id}/fetch`, { period: 'yesterday' }).catch((e: any) => ({ error: e.message }));
       await loadProfiles();
       setFullFetchResult({
         profileName: profile?.name || id,
