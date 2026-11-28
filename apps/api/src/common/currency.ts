@@ -4,7 +4,7 @@ const PLATFORM_CURRENCY: Record<string, string> = {
   ONEOPSPORTAL: 'THB',
 };
 
-const CONVERSION_TARGETS = ['USD', 'IDR'];
+const CONVERSION_TARGETS = ['USD', 'THB', 'IDR', 'MYR'];
 
 export interface CurrencyInfo {
   currency: string;
@@ -66,6 +66,8 @@ export function fmtCurrency(amount: number, currency: string): string {
       return 'Rp ' + amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
     case 'THB':
       return '฿' + amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    case 'MYR':
+      return 'RM ' + amount.toLocaleString('en-US', { maximumFractionDigits: 0 });
     default:
       return amount.toLocaleString('en-US', { maximumFractionDigits: 2 }) + ' ' + currency;
   }

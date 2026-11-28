@@ -1012,7 +1012,7 @@ export default function ProfilesPage() {
               <div>
                 <div className="fetch-card-name">{fullFetchResult.profileName}</div>
                 <div className="fetch-card-sub">
-                  Today vs Yesterday — Full Comparison
+                  Yesterday vs Today — Full Comparison
                 </div>
               </div>
               <span className={`badge badge-${fullFetchResult.profileKind.toLowerCase()}`}>
@@ -1039,15 +1039,15 @@ export default function ProfilesPage() {
                 <div className="full-fetch-header">
                   <div className="full-fetch-col-label" />
                   <div className="full-fetch-col-head">
-                    Today
-                    {fullFetchResult.today?.scrape?.reportDate && (
-                      <span className="full-fetch-date">{formatReportDate(fullFetchResult.today.scrape.reportDate)}</span>
-                    )}
-                  </div>
-                  <div className="full-fetch-col-head">
                     Yesterday
                     {fullFetchResult.yesterday?.scrape?.reportDate && (
                       <span className="full-fetch-date">{formatReportDate(fullFetchResult.yesterday.scrape.reportDate)}</span>
+                    )}
+                  </div>
+                  <div className="full-fetch-col-head">
+                    Today
+                    {fullFetchResult.today?.scrape?.reportDate && (
+                      <span className="full-fetch-date">{formatReportDate(fullFetchResult.today.scrape.reportDate)}</span>
                     )}
                   </div>
                   <div className="full-fetch-col-head">Change</div>
@@ -1070,8 +1070,8 @@ export default function ProfilesPage() {
                   return (
                     <div key={m.key} className="full-fetch-row">
                       <div className="full-fetch-label">{m.label}</div>
-                      <div className={`full-fetch-val ${m.isAmt ? 'amount' : ''}`}>{fmt(tVal)}</div>
                       <div className={`full-fetch-val ${m.isAmt ? 'amount' : ''}`}>{fmt(yVal)}</div>
+                      <div className={`full-fetch-val ${m.isAmt ? 'amount' : ''}`}>{fmt(tVal)}</div>
                       <div className="full-fetch-delta">
                         {pct !== null && isFinite(pct) && Math.abs(pct) >= 0.1 ? (
                           <span className={`text-[12px] font-semibold ${diff > 0 ? 'text-success' : diff < 0 ? 'text-error' : 'text-muted'}`}>
@@ -1096,11 +1096,11 @@ export default function ProfilesPage() {
                   return (
                     <div className="full-fetch-row full-fetch-net-row">
                       <div className="full-fetch-label font-bold">Net Flow</div>
-                      <div className={`full-fetch-val font-bold ${tNet >= 0 ? 'text-success' : 'text-error'}`}>
-                        {tNet >= 0 ? '+' : ''}{fmt(tNet)}
-                      </div>
                       <div className={`full-fetch-val font-bold ${yNet >= 0 ? 'text-success' : 'text-error'}`}>
                         {yNet >= 0 ? '+' : ''}{fmt(yNet)}
+                      </div>
+                      <div className={`full-fetch-val font-bold ${tNet >= 0 ? 'text-success' : 'text-error'}`}>
+                        {tNet >= 0 ? '+' : ''}{fmt(tNet)}
                       </div>
                       <div className="full-fetch-delta">
                         {pct !== null && isFinite(pct) && Math.abs(pct) >= 0.1 ? (
@@ -1118,11 +1118,11 @@ export default function ProfilesPage() {
                 {/* Conversions */}
                 {(fullFetchResult.today?.conversions?.totalDepositAmount?.length || fullFetchResult.yesterday?.conversions?.totalDepositAmount?.length) ? (
                   <div className="full-fetch-conv">
-                    {fullFetchResult.today?.conversions?.totalDepositAmount && (
-                      <span>Today dep: {fullFetchResult.today.conversions.totalDepositAmount.join(' · ')}</span>
-                    )}
                     {fullFetchResult.yesterday?.conversions?.totalDepositAmount && (
                       <span>Yest dep: {fullFetchResult.yesterday.conversions.totalDepositAmount.join(' · ')}</span>
+                    )}
+                    {fullFetchResult.today?.conversions?.totalDepositAmount && (
+                      <span>Today dep: {fullFetchResult.today.conversions.totalDepositAmount.join(' · ')}</span>
                     )}
                   </div>
                 ) : null}

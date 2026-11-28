@@ -378,6 +378,15 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
+    if (data.startsWith('b:')) {
+      await this.call('answerCallbackQuery', {
+        callback_query_id: cq.id,
+        text: 'Fetching both…',
+      }).catch(() => {});
+      await this.doBothFetch(chatId, data.slice(2), cq.from?.username);
+      return;
+    }
+
     await this.call('answerCallbackQuery', { callback_query_id: cq.id }).catch(() => {});
   }
 
@@ -437,6 +446,82 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     return `${header}\n\n${lines.join('\n')}`;
   }
 
+  private formatBothResult(
+    profile: { name: string; kind: string },
+    todayParsed: any,
+    yesterdayParsed: any,
+    cInfo?: CurrencyInfo,
+  ): string {
+    const timeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
+    const header = `📊 <b>${esc(profile.name)}</b> <i>(${esc(profile.kind)})</i>\n📋 Yesterday vs Today · ${timeStr}`;
+
+    if (!todayParsed && !yesterdayParsed) {
+      return `${header}\n\nNo data could be parsed for either period.`;
+    }
+
+    const lines: string[] = [];
+
+    lines.push('');
+    lines.push('<pre>');
+    lines.push(`${'Metric'.padEnd(16)} ${'Yest'.padStart(10)}  ${'Today'.padStart(10)}  ${'Chg'.padStart(6)}`);
+    lines.push('─'.repeat(48));
+
+    for (const k of COMMON_FIELDS) {
+      const yVal = yesterdayParsed?.data?.[k];
+      const tVal = todayParsed?.data?.[k];
+      const yNum = yVal != null ? Number(yVal) : 0;
+      const tNum = tVal != null ? Number(tVal) : 0;
+      const diff = tNum - yNum;
+      const pct = yNum ? ((diff / Math.abs(yNum)) * 100) : null;
+
+      const label = (COMMON_LABELS[k] || k).replace('Total ', '').replace(' Count', ' Cnt').replace(' Amount', ' Amt');
+      const shortLabel = label.length > 16 ? label.slice(0, 15) + '…' : label;
+
+      const yStr = yVal != null ? fmtNum(yVal) : '—';
+      const tStr = tVal != null ? fmtNum(tVal) : '—';
+      const pctStr = pct != null && isFinite(pct) && Math.abs(pct) >= 0.1
+        ? `${pct > 0 ? '+' : ''}${pct.toFixed(1)}%`
+        : '—';
+
+      lines.push(`${shortLabel.padEnd(16)} ${yStr.padStart(10)}  ${tStr.padStart(10)}  ${pctStr.padStart(6)}`);
+    }
+
+    const tDep = todayParsed?.data?.totalDepositAmount != null ? Number(todayParsed.data.totalDepositAmount) : 0;
+    const tWith = todayParsed?.data?.totalWithdrawalAmount != null ? Number(todayParsed.data.totalWithdrawalAmount) : 0;
+    const yDep = yesterdayParsed?.data?.totalDepositAmount != null ? Number(yesterdayParsed.data.totalDepositAmount) : 0;
+    const yWith = yesterdayParsed?.data?.totalWithdrawalAmount != null ? Number(yesterdayParsed.data.totalWithdrawalAmount) : 0;
+    const tNet = tDep - tWith;
+    const yNet = yDep - yWith;
+    const netDiff = tNet - yNet;
+    const netPct = yNet ? ((netDiff / Math.abs(yNet)) * 100) : null;
+    const netPctStr = netPct != null && isFinite(netPct) && Math.abs(netPct) >= 0.1
+      ? `${netPct > 0 ? '+' : ''}${netPct.toFixed(1)}%`
+      : '—';
+
+    lines.push('─'.repeat(48));
+    const yNetStr = (yNet >= 0 ? '+' : '') + fmtNum(yNet);
+    const tNetStr = (tNet >= 0 ? '+' : '') + fmtNum(tNet);
+    lines.push(`${'Net Flow'.padEnd(16)} ${yNetStr.padStart(10)}  ${tNetStr.padStart(10)}  ${netPctStr.padStart(6)}`);
+    lines.push('</pre>');
+
+    if (cInfo) {
+      const convParts: string[] = [];
+      if (yDep) {
+        const labels = convertedLabels(yDep, cInfo.currency, cInfo.rates);
+        if (labels.length) convParts.push(`Yest dep: ${labels.join(' · ')}`);
+      }
+      if (tDep) {
+        const labels = convertedLabels(tDep, cInfo.currency, cInfo.rates);
+        if (labels.length) convParts.push(`Today dep: ${labels.join(' · ')}`);
+      }
+      if (convParts.length) {
+        lines.push(`\n<i>${convParts.map(esc).join('\n')}</i>`);
+      }
+    }
+
+    return `${header}\n${lines.join('\n')}`;
+  }
+
   private resultKeyboard(profileId: string) {
     return {
       inline_keyboard: [
@@ -444,6 +529,7 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
           { text: '🔄 Today', callback_data: `f:${profileId}` },
           { text: '📅 Yesterday', callback_data: `y:${profileId}` },
         ],
+        [{ text: '📊 Both', callback_data: `b:${profileId}` }],
         [{ text: '‹ Back to list', callback_data: 'list' }],
       ],
     };
@@ -692,6 +778,124 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
         `❌ <b>${esc(profile.name)}</b>\nFetch failed: ${esc(err.message)}`,
         kb,
       );
+    } finally {
+      this.inFlight.delete(profile.id);
+    }
+  }
+
+  private async doBothFetch(chatId: number, profileId: string, username?: string) {
+    const profile = await this.prisma.profile.findUnique({ where: { id: profileId } });
+    if (!profile) {
+      await this.sendMessage(chatId, 'Profile not found.');
+      return;
+    }
+
+    if (this.inFlight.has(profile.id)) {
+      await this.sendMessage(chatId, `⏳ ${esc(profile.name)} is already being fetched…`, { parse_mode: 'HTML' });
+      return;
+    }
+    this.inFlight.add(profile.id);
+
+    this.recordActivity('telegram', tgActor(chatId, username), 'fetch', profile.name, 'both');
+
+    let statusId: number | null = null;
+    try {
+      const m = await this.sendMessage(chatId,
+        `⏳ Fetching today + yesterday for <b>${esc(profile.name)}</b>…`,
+        { parse_mode: 'HTML' },
+      );
+      statusId = m?.message_id ?? null;
+    } catch { /* ignore */ }
+
+    const kb = this.resultKeyboard(profile.id);
+
+    try {
+      if (!this.scrapesService) {
+        await this.finishText(chatId, statusId, `❌ Scrapes service not available.`);
+        return;
+      }
+
+      const tResult = await this.scrapesService.runAndSave(profile, 'today');
+      let todayParsed: any = tResult.parsed || null;
+      if (!todayParsed && tResult.scrape) {
+        todayParsed = {
+          data: {
+            newRegistrationCount: tResult.scrape?.newRegistrationCount ?? null,
+            newDepositCount: tResult.scrape?.newDepositCount ?? null,
+            totalDepositCount: tResult.scrape?.totalDepositCount ?? null,
+            totalDepositAmount: tResult.scrape?.totalDepositAmount != null ? Number(tResult.scrape.totalDepositAmount) : null,
+            totalWithdrawalCount: tResult.scrape?.totalWithdrawalCount ?? null,
+            totalWithdrawalAmount: tResult.scrape?.totalWithdrawalAmount != null ? Number(tResult.scrape.totalWithdrawalAmount) : null,
+          },
+          reportDate: tResult.scrape?.reportDate,
+          reportDateString: tResult.scrape?.reportDateString,
+        };
+      }
+
+      const yResult = await this.scrapesService.fetchYesterday(profile, true);
+      let yesterdayParsed: any = null;
+      if (yResult.scrape) {
+        yesterdayParsed = {
+          data: {
+            newRegistrationCount: yResult.scrape?.newRegistrationCount ?? null,
+            newDepositCount: yResult.scrape?.newDepositCount ?? null,
+            totalDepositCount: yResult.scrape?.totalDepositCount ?? null,
+            totalDepositAmount: yResult.scrape?.totalDepositAmount != null ? Number(yResult.scrape.totalDepositAmount) : null,
+            totalWithdrawalCount: yResult.scrape?.totalWithdrawalCount ?? null,
+            totalWithdrawalAmount: yResult.scrape?.totalWithdrawalAmount != null ? Number(yResult.scrape.totalWithdrawalAmount) : null,
+          },
+          reportDate: yResult.scrape?.reportDate,
+          reportDateString: yResult.scrape?.reportDateString,
+        };
+      }
+
+      if (tResult.loggedIn === false) {
+        const prevStatus = profile.status;
+        if (tResult.accessDenied) {
+          await this.prisma.profile.update({ where: { id: profile.id }, data: { status: 'ACCESS_DENIED' } });
+          if (prevStatus !== 'ACCESS_DENIED') this.sendAccessDeniedAlert(profile, 'Telegram fetch');
+          await this.finishText(chatId, statusId,
+            `🚫 <b>${esc(profile.name)}</b>\nAccess denied — re-login this profile.`, kb);
+          return;
+        }
+        await this.prisma.profile.update({ where: { id: profile.id }, data: { status: 'LOGGED_OUT' } });
+        if (prevStatus !== 'LOGGED_OUT') this.sendSessionAlert(profile, 'Telegram fetch');
+        await this.finishText(chatId, statusId,
+          `⚠️ <b>${esc(profile.name)}</b>\nSession expired — open the dashboard and click <b>Login</b>.`, kb);
+        return;
+      }
+
+      await this.prisma.profile.update({
+        where: { id: profile.id },
+        data: { status: 'LOGGED_IN' },
+      }).catch(() => {});
+
+      await this.loadSettings();
+      const currency = currencyForPlatform(profile.kind);
+      const rates = await getExchangeRates();
+      const cInfo: CurrencyInfo | undefined = rates ? { currency, rates } : undefined;
+
+      const text = this.formatBothResult(profile, todayParsed, yesterdayParsed, cInfo);
+
+      await this.finishText(chatId, statusId, text, kb);
+      this.logs.logEvent({
+        type: 'telegram',
+        profileId: profile.id,
+        message: 'Telegram fetch: both sent',
+      });
+    } catch (err: any) {
+      this.logger.error(`Telegram both-fetch failed: ${err.message}`);
+      await this.prisma.profile.update({
+        where: { id: profile.id },
+        data: { status: 'ERROR' },
+      }).catch(() => {});
+      this.logs.logEvent({
+        type: 'error',
+        profileId: profile.id,
+        message: `Telegram both-fetch failed: ${err.message}`,
+      });
+      await this.finishText(chatId, statusId,
+        `❌ <b>${esc(profile.name)}</b>\nFetch failed: ${esc(err.message)}`, kb);
     } finally {
       this.inFlight.delete(profile.id);
     }
