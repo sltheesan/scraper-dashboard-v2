@@ -623,10 +623,11 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
       }
 
       let when: string;
+      const timeStr = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
       if (period === 'yesterday') {
         const y = new Date();
         y.setDate(y.getDate() - 1);
-        when = `Yesterday · ${formatICTDate(y)}`;
+        when = `Yesterday · ${formatICTDate(y)} · ${timeStr}`;
       } else {
         when = formatICT();
       }

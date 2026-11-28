@@ -20,6 +20,7 @@ import { LogsService } from '../logs/logs.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { PrivilegesGuard, Privileges } from '../auth/privileges.guard';
 import { validateProfileUrl, validateProxyUrl } from '../common/url-validator';
+import { currencyForPlatform, getExchangeRates, convertedLabels } from '../common/currency';
 
 @Controller('profiles')
 @UseGuards(JwtAuthGuard, PrivilegesGuard)
@@ -223,6 +224,20 @@ export class ProfilesController {
       } else if (!result.accessDenied && previousStatus !== 'LOGGED_OUT') {
         this.telegramService.sendSessionAlert?.(profile, 'manual fetch').catch(() => {});
       }
+    }
+
+    if (result.scrape) {
+      const currency = currencyForPlatform(profile.kind);
+      const rates = await getExchangeRates();
+      if (rates) {
+        const dep = Number(result.scrape.totalDepositAmount) || 0;
+        const wth = Number(result.scrape.totalWithdrawalAmount) || 0;
+        result.conversions = {
+          totalDepositAmount: convertedLabels(dep, currency, rates),
+          totalWithdrawalAmount: convertedLabels(wth, currency, rates),
+        };
+      }
+      result.fetchedAt = result.scrape.updatedAt || result.scrape.createdAt || new Date().toISOString();
     }
 
     return result;

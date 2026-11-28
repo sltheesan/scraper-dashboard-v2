@@ -42,12 +42,20 @@ interface FetchResultData {
   accessDenied?: boolean;
   cached?: boolean;
   scrape?: ScrapeData;
+  conversions?: { totalDepositAmount?: string[]; totalWithdrawalAmount?: string[] };
+  fetchedAt?: string;
 }
 
 function formatReportDate(s?: string): string {
   if (!s) return '—';
   const d = new Date(s);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Bangkok' });
+}
+
+function formatFetchTime(s?: string): string {
+  if (!s) return '';
+  const d = new Date(s);
+  return d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' });
 }
 
 function fmt(n?: number | string): string {
@@ -383,6 +391,8 @@ export default function ProfilesPage() {
           accessDenied: result.accessDenied,
           cached: result.cached,
           scrape: result.scrape,
+          conversions: result.conversions,
+          fetchedAt: result.fetchedAt,
         });
       }
     } catch (err: any) {
@@ -823,6 +833,7 @@ export default function ProfilesPage() {
                   {fetchResult.period === 'yesterday' ? 'Yesterday' : 'Today'}
                   {fetchResult.scrape?.reportDate && <> · {formatReportDate(fetchResult.scrape.reportDate)}</>}
                   {' '}ICT
+                  {fetchResult.fetchedAt && <> · {formatFetchTime(fetchResult.fetchedAt)}</>}
                   {fetchResult.cached && <span className="fetch-card-cached">cached</span>}
                 </div>
               </div>
@@ -868,6 +879,9 @@ export default function ProfilesPage() {
                 <div className="fetch-card-metric">
                   <span className="fetch-card-label">Total Deposit Amount</span>
                   <span className="fetch-card-value amount">{fmt(fetchResult.scrape.totalDepositAmount)}</span>
+                  {fetchResult.conversions?.totalDepositAmount?.length ? (
+                    <span className="fetch-card-conv">{fetchResult.conversions.totalDepositAmount.join(' · ')}</span>
+                  ) : null}
                 </div>
                 <div className="fetch-card-metric">
                   <span className="fetch-card-label">Total Withdrawal Count</span>
@@ -876,6 +890,9 @@ export default function ProfilesPage() {
                 <div className="fetch-card-metric">
                   <span className="fetch-card-label">Total Withdrawal Amount</span>
                   <span className="fetch-card-value amount">{fmt(fetchResult.scrape.totalWithdrawalAmount)}</span>
+                  {fetchResult.conversions?.totalWithdrawalAmount?.length ? (
+                    <span className="fetch-card-conv">{fetchResult.conversions.totalWithdrawalAmount.join(' · ')}</span>
+                  ) : null}
                 </div>
               </div>
             ) : (

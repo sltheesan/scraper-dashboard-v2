@@ -827,6 +827,12 @@ tr:hover td { background: var(--surface-hover); }
 .fetch-card-value.amount {
   color: var(--accent);
 }
+.fetch-card-conv {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--success);
+  margin-top: 2px;
+}
 
 .fetch-card-foot {
   display: flex;
